@@ -349,28 +349,73 @@ function moveFocus(direction) {
   if (candidates[0]) candidates[0].el.focus();
 }
 
-document.addEventListener('keydown', event => {
-  const keyMap = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
-  if (keyMap[event.key]) {
+function remoteKey(event) {
+  const key = event.key;
+  const code = event.keyCode || event.which;
+  const directions = {
+    ArrowLeft: 'left', Left: 'left',
+    ArrowRight: 'right', Right: 'right',
+    ArrowUp: 'up', Up: 'up',
+    ArrowDown: 'down', Down: 'down'
+  };
+
+  if (directions[key]) return directions[key];
+
+  // Android KeyEvent codes used by some TV WebViews and remote controls.
+  if (code === 21 || code === 37) return 'left';
+  if (code === 22 || code === 39) return 'right';
+  if (code === 19 || code === 38) return 'up';
+  if (code === 20 || code === 40) return 'down';
+  if (key === 'Enter' || key === 'Accept' || key === 'Select' || key === ' ' || code === 13 || code === 23 || code === 66) return 'ok';
+  if (key === 'Escape' || key === 'BrowserBack' || key === 'GoBack' || code === 4 || code === 27) return 'back';
+  return null;
+}
+
+function handleRemoteKey(event) {
+  const action = remoteKey(event);
+
+  if (['left', 'right', 'up', 'down'].includes(action)) {
     event.preventDefault();
-    moveFocus(keyMap[event.key]);
+    event.stopPropagation();
+    moveFocus(action);
     return;
   }
 
-  if ((event.key === 'Enter' || event.key === ' ') && game?.answered && screens.game.classList.contains('active')) {
+  if (action === 'ok') {
     event.preventDefault();
-    nextQuestion();
+    event.stopPropagation();
+    if (event.repeat) return;
+    if (game?.answered && screens.game.classList.contains('active')) nextQuestion();
+    else if (document.activeElement instanceof HTMLElement) document.activeElement.click();
     return;
   }
 
-  if ((event.key === 'Escape' || event.key === 'BrowserBack') && screens.game.classList.contains('active')) {
+  if (action === 'back' && screens.game.classList.contains('active')) {
     event.preventDefault();
+    event.stopPropagation();
     clearInterval(timerId);
     timerId = null;
     game = null;
     showScreen('home');
   }
-});
+}
+
+// Capture first so compatible TV browsers cannot scroll the page before the
+// app handles a D-pad event.
+window.addEventListener('keydown', handleRemoteKey, { capture: true });
+window.addEventListener('keyup', event => {
+  if (remoteKey(event)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}, { capture: true });
+
+// In TV Bro cursor mode, keep the visible focus ring aligned with the item
+// under the cursor. Direct navigation mode remains the recommended option.
+document.addEventListener('pointermove', event => {
+  const target = event.target.closest?.('button:not([disabled]), input:not([disabled])');
+  if (target && target !== document.activeElement) target.focus({ preventScroll: true });
+}, { passive: true });
 
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
