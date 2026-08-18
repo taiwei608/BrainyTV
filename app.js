@@ -1,5 +1,7 @@
 const STORAGE_KEY = 'family-learning-tv-v1';
 
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
 const defaultState = {
   players: [],
   currentPlayerId: null,
@@ -74,7 +76,10 @@ function renderHome() {
         state.currentPlayerId = player.id;
         saveState();
         renderHome();
-        requestAnimationFrame(() => document.querySelector(`[data-player-id="${player.id}"]`)?.focus());
+        requestAnimationFrame(() => {
+          const selected = document.querySelector(`[data-player-id="${player.id}"]`);
+          if (selected) focusWithoutScroll(selected);
+        });
       });
       list.appendChild(btn);
     });
@@ -329,7 +334,18 @@ function focusable(root = document) {
 
 function focusFirst(root = document) {
   const el = focusable(root)[0];
-  if (el) el.focus();
+  if (el) focusWithoutScroll(el);
+}
+
+function focusWithoutScroll(el) {
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    el.focus();
+  }
+  // TV Bro may pan its WebView after focus even when the document cannot
+  // normally scroll. Restore the fixed game viewport after that native step.
+  requestAnimationFrame(() => window.scrollTo(0, 0));
 }
 
 function moveFocus(direction) {
@@ -353,7 +369,7 @@ function moveFocus(direction) {
     return { el, score: primary + cross * 2.4 };
   }).filter(Boolean).sort((a,b) => a.score - b.score);
 
-  if (candidates[0]) candidates[0].el.focus();
+  if (candidates[0]) focusWithoutScroll(candidates[0].el);
 }
 
 function remoteKey(event) {
@@ -428,8 +444,14 @@ window.addEventListener('keyup', event => {
 // under the cursor. Direct navigation mode remains the recommended option.
 document.addEventListener('pointermove', event => {
   const target = event.target.closest?.('button:not([disabled]), input:not([disabled])');
-  if (target && target !== document.activeElement) target.focus({ preventScroll: true });
+  if (target && target !== document.activeElement) focusWithoutScroll(target);
 }, { passive: true });
+
+document.addEventListener('focusin', () => {
+  requestAnimationFrame(() => window.scrollTo(0, 0));
+});
+
+window.addEventListener('resize', () => window.scrollTo(0, 0));
 
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;

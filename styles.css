@@ -11,14 +11,15 @@
 }
 
 * { box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; }
+html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
 body { margin: 0; background: radial-gradient(circle at top, #1e293b 0, #0f172a 46%, #020617 100%); }
 button, input { font: inherit; }
 button { cursor: pointer; }
 
-.app-shell { height: 100vh; height: 100dvh; padding: clamp(24px, 3vw, 48px); overflow: hidden; }
+.app-shell { position: fixed; inset: 0; width: 100%; height: 100%; padding: clamp(14px, 2.4vh, 28px) clamp(20px, 3vw, 48px); overflow: hidden; }
 .screen { display: none; height: 100%; overflow: hidden; }
 .screen.active { display: block; }
+#playerScreen.active, #gamesScreen.active, #settingsScreen.active { display: flex; flex-direction: column; }
 
 .topbar, .game-hud { display: flex; justify-content: space-between; align-items: center; gap: 28px; }
 .eyebrow { margin: 0 0 8px; color: #93c5fd; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: clamp(18px, 1.8vw, 28px); }
@@ -28,7 +29,7 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 
 .player-badge { padding: 14px 22px; border-radius: 999px; background: var(--surface); color: var(--text-soft); font-size: clamp(18px, 1.7vw, 28px); font-weight: 800; }
 .tv-bro-hint { margin: 22px 0 0; padding: 12px 18px; border: 1px solid rgba(147,197,253,.35); border-radius: 16px; background: rgba(30,64,175,.2); color: #dbeafe; font-size: clamp(16px,1.25vw,21px); }
-.single-step-layout { display: grid; place-items: center; height: calc(100% - 175px); }
+.single-step-layout { display: grid; place-items: center; flex: 1; min-height: 0; }
 .player-panel { width: min(1100px, 100%); }
 .step-next { margin-left: auto; }
 .home-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; margin-top: 34px; }
@@ -52,7 +53,7 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 #modeOptions { grid-template-columns: repeat(2, 1fr); }
 
 .games-section { margin-top: 32px; }
-#gamesScreen .games-section { display: flex; flex-direction: column; justify-content: center; height: calc(100% - 145px); }
+#gamesScreen .games-section { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; }
 .game-cards { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; }
 .game-card { min-height: 160px; padding: 24px; display: flex; align-items: center; gap: 20px; text-align: left; }
 .game-card.featured { background: linear-gradient(135deg,#1d4ed8,#312e81); }
@@ -61,34 +62,35 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .game-copy strong { display: block; font-size: clamp(24px,2.2vw,36px); }
 .game-copy small { color: var(--text-soft); font-size: clamp(16px,1.3vw,22px); }
 
-.game-hud { background: rgba(15,23,42,.75); border-radius: 24px; padding: 20px 26px; }
+#gameScreen.active { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: clamp(5px, 1.2vh, 12px); }
+.game-hud { background: rgba(15,23,42,.75); border-radius: 20px; padding: clamp(8px,1.5vh,16px) clamp(16px,2vw,26px); }
 .game-hud > div { display: flex; flex-direction: column; min-width: 140px; }
 .hud-label { color: var(--text-soft); font-size: 18px; }
-.game-hud strong { font-size: clamp(30px,3vw,48px); }
+.game-hud strong { font-size: clamp(26px,5vh,44px); line-height: 1.05; }
 .countdown { align-items: flex-end; }
 .countdown strong { color: #fde68a; }
-.timer-track { height: 12px; margin: 12px 8px 0; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.12); }
+.timer-track { height: clamp(7px,1.2vh,12px); margin: 0 8px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.12); }
 .timer-progress { width: 100%; height: 100%; border-radius: inherit; background: #22c55e; transition: width .25s linear, background-color .25s ease; }
 .timer-progress.urgent { background: #fb7185; }
-.question-wrap { text-align: center; padding: 7vh 0 4vh; }
-.question-meta { color: var(--text-soft); font-size: clamp(18px,1.5vw,26px); }
-.question-text { font-size: clamp(72px,10vw,160px); line-height: 1; margin-bottom: 22px; }
-.feedback { min-height: 58px; font-size: clamp(24px,2.4vw,42px); font-weight: 900; }
+.question-wrap { text-align: center; padding: 0; }
+.question-meta { margin-bottom: 2px; color: var(--text-soft); font-size: clamp(15px,2.8vh,24px); line-height: 1; }
+.question-text { font-size: clamp(52px,11vh,112px); line-height: .95; margin-bottom: 2px; }
+.feedback { min-height: clamp(28px,4.5vh,48px); font-size: clamp(20px,4vh,38px); line-height: 1.1; font-weight: 900; }
 .feedback.good { color: var(--good); }
 .feedback.bad { color: var(--bad); }
-.answers-grid { max-width: 1150px; margin: 0 auto; display: grid; grid-template-columns: repeat(2,1fr); gap: 22px; }
-.answer-btn { min-height: 120px; font-size: clamp(44px,5vw,76px); }
+.answers-grid { width: min(1150px,100%); height: 100%; min-height: 0; margin: 0 auto; display: grid; grid-template-columns: repeat(2,1fr); grid-template-rows: repeat(2,minmax(0,1fr)); gap: clamp(10px,1.8vh,20px); }
+.answer-btn { min-height: 0; font-size: clamp(36px,8vh,68px); }
 .answer-btn.correct { background: #166534; }
 .answer-btn.wrong { background: #9f1239; }
-.remote-hint { text-align: center; margin: 28px 0 0; color: #94a3b8; font-size: 18px; }
+.remote-hint { text-align: center; margin: 0; color: #94a3b8; font-size: clamp(14px,2.5vh,18px); line-height: 1; }
 
-.keypad-wrap { max-width: 760px; margin: 0 auto; }
-.keypad-display { min-height: 86px; display: grid; place-items: center; margin-bottom: 18px; background: rgba(255,255,255,.08); border-radius: 18px; font-size: 56px; font-weight: 900; }
-.keypad-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; }
-.key-btn { min-height: 92px; font-size: 38px; }
+.keypad-wrap { width: min(760px,100%); height: 100%; min-height: 0; margin: 0 auto; display: flex; flex-direction: column; }
+.keypad-display { min-height: clamp(42px,8vh,72px); display: grid; place-items: center; margin-bottom: clamp(6px,1vh,12px); background: rgba(255,255,255,.08); border-radius: 14px; font-size: clamp(34px,7vh,52px); font-weight: 900; }
+.keypad-grid { display: grid; flex: 1; min-height: 0; grid-template-columns: repeat(5,1fr); grid-template-rows: repeat(3,minmax(0,1fr)); gap: clamp(7px,1.2vh,12px); }
+.key-btn { min-height: 0; font-size: clamp(24px,5vh,36px); }
 .hidden { display: none !important; }
 
-.result-screen { text-align: center; padding-top: 7vh; }
+.result-screen { text-align: center; padding-top: 2vh; }
 .result-screen h2 { font-size: clamp(42px,5vw,74px); }
 .result-score { font-size: clamp(92px,12vw,180px); font-weight: 950; line-height: 1; }
 .result-score small { font-size: .24em; color: var(--text-soft); margin-left: 8px; }
@@ -120,4 +122,36 @@ button { transition: transform .12s ease, outline-color .12s ease; }
 @media (max-width: 900px) {
   .home-grid, .game-cards { grid-template-columns: 1fr 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-height: 700px) {
+  .app-shell { padding: 10px 24px; }
+  .topbar { flex: 0 0 auto; }
+  .eyebrow { margin-bottom: 2px; font-size: 15px; }
+  h1 { font-size: 36px; }
+  h2 { margin-bottom: 10px; font-size: 26px; }
+  .player-badge { padding: 8px 14px; font-size: 17px; }
+  .tv-bro-hint { margin: 7px 0 0; padding: 6px 12px; font-size: 14px; }
+  .panel { padding: 16px; border-radius: 20px; }
+  .player-option { padding: 10px 14px; font-size: 22px; }
+  .inline-actions { margin-top: 10px; }
+  .btn { padding: 10px 16px; font-size: 18px; }
+  .games-section { margin-top: 10px; }
+  .game-card { min-height: 105px; padding: 14px; }
+  .game-icon { min-width: 45px; font-size: 38px; }
+  .settings-panel { margin: auto; }
+  .fixed-duration { padding: 10px 16px; margin-bottom: 14px; font-size: 18px; }
+  .fixed-duration strong { font-size: 28px; }
+  .option { padding: 12px; font-size: 20px; }
+  .settings-actions { margin-top: 18px; }
+  .hud-label { font-size: 14px; }
+  .game-hud > div { min-width: 100px; }
+  .remote-hint { display: none; }
+  .result-screen { padding-top: 0; }
+  .result-screen h2 { margin-bottom: 4px; font-size: 38px; }
+  .result-score { font-size: 76px; }
+  .stats-grid { margin: 12px auto; gap: 10px; }
+  .stats-grid > div { padding: 10px; }
+  .stats-grid span { font-size: 16px; }
+  .stats-grid strong { margin-top: 2px; font-size: 30px; }
 }
