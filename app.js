@@ -2,10 +2,23 @@ const STORAGE_KEY = 'family-learning-tv-v1';
 
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
+const GAME_DEFINITIONS = {
+  multiplication: { label: '九九乘法', symbol: '×', levels: ['all'] },
+  addition: { label: '加法挑戰', symbol: '+', levels: ['ones', 'tens', 'hundreds'] },
+  subtraction: { label: '減法挑戰', symbol: '−', levels: ['ones', 'tens', 'hundreds'] }
+};
+
+const LEVEL_DEFINITIONS = {
+  all: { label: '九九乘法', min: 2, max: 9 },
+  ones: { label: '個位數', min: 1, max: 9 },
+  tens: { label: '十位數', min: 10, max: 99 },
+  hundreds: { label: '百位數', min: 100, max: 999 }
+};
+
 const defaultState = {
   players: [],
   currentPlayerId: null,
-  settings: { duration: 60, mode: 'choice' }
+  settings: { duration: 60, mode: 'choice', gameType: 'multiplication', level: 'ones' }
 };
 
 let state = loadState();
@@ -25,16 +38,77 @@ const screens = {
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    const loaded = saved ? { ...defaultState, ...saved, settings: { ...defaultState.settings, ...(saved.settings || {}) } } : structuredClone(defaultState);
+    const loaded = saved ? { ...defaultState, ...saved, settings: { ...defaultState.settings, ...(saved.settings || {}) } } : cloneData(defaultState);
     loaded.settings.duration = 60;
+    if (!GAME_DEFINITIONS[loaded.settings.gameType]) loaded.settings.gameType = 'multiplication';
+    if (!LEVEL_DEFINITIONS[loaded.settings.level]) loaded.settings.level = 'ones';
+    loaded.players = Array.isArray(loaded.players) ? loaded.players : [];
+    loaded.players.forEach(ensurePlayerProgress);
     return loaded;
   } catch {
-    return structuredClone(defaultState);
+    return cloneData(defaultState);
   }
 }
 
 function saveState() {
+  state.players.forEach(ensurePlayerProgress);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function cloneData(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+}
+
+function emptyRecord() {
+  return { highScore: 0, lastScore: null, plays: 0, questionStats: {} };
+}
+
+function createProgressMap() {
+  return {
+    multiplication: { all: emptyRecord() },
+    addition: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() },
+    subtraction: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() }
+  };
+}
+
+function ensurePlayerProgress(player) {
+  if (!player.progress || typeof player.progress !== 'object') player.progress = {};
+
+  Object.entries(GAME_DEFINITIONS).forEach(([gameType, definition]) => {
+    if (!player.progress[gameType] || typeof player.progress[gameType] !== 'object') {
+      player.progress[gameType] = {};
+    }
+    definition.levels.forEach(level => {
+      if (!player.progress[gameType][level]) {
+        const isLegacyMultiplication = gameType === 'multiplication' && level === 'all';
+        player.progress[gameType][level] = isLegacyMultiplication
+          ? {
+              highScore: Number(player.highScore) || 0,
+              lastScore: player.lastScore ?? null,
+              plays: Number(player.plays) || 0,
+              questionStats: player.questionStats && typeof player.questionStats === 'object' ? player.questionStats : {}
+            }
+          : emptyRecord();
+      }
+      const record = player.progress[gameType][level];
+      record.highScore = Number(record.highScore) || 0;
+      record.lastScore = record.lastScore == null ? null : Number(record.lastScore) || 0;
+      record.plays = Number(record.plays) || 0;
+      if (!record.questionStats || typeof record.questionStats !== 'object') record.questionStats = {};
+    });
+  });
+
+  return player;
+}
+
+function playerRecord(player, gameType = state.settings.gameType, level = selectedLevel(gameType)) {
+  ensurePlayerProgress(player);
+  return player.progress[gameType][level];
+}
+
+function selectedLevel(gameType = state.settings.gameType) {
+  return gameType === 'multiplication' ? 'all' : state.settings.level;
 }
 
 function currentPlayer() {
@@ -50,7 +124,8 @@ function createPlayer(name) {
     highScore: 0,
     lastScore: null,
     plays: 0,
-    questionStats: {}
+    questionStats: {},
+    progress: createProgressMap()
   };
   state.players.push(player);
   state.currentPlayerId = player.id;
@@ -72,8 +147,7 @@ function renderHome() {
       const btn = document.createElement('button');
       btn.className = 'player-option' + (player.id === state.currentPlayerId ? ' selected' : '');
       btn.dataset.playerId = player.id;
-      const last = player.lastScore == null ? '尚未遊玩' : `最近 ${player.lastScore} 分`;
-      btn.innerHTML = `${escapeHtml(player.name)}<small>最高 ${player.highScore} 分 · ${last}</small>`;
+      btn.innerHTML = `${escapeHtml(player.name)}<small>${player.id === state.currentPlayerId ? '目前玩家' : '按 OK 選擇'}</small>`;
       btn.addEventListener('click', () => {
         state.currentPlayerId = player.id;
         saveState();
@@ -98,6 +172,56 @@ function renderHome() {
   });
 }
 
+function selectGame(gameType) {
+  if (!GAME_DEFINITIONS[gameType]) return;
+  state.settings.gameType = gameType;
+  if (gameType !== 'multiplication' && !['ones', 'tens', 'hundreds'].includes(state.settings.level)) {
+    state.settings.level = 'ones';
+  }
+  saveState();
+  renderSettings();
+  showScreen('settings');
+}
+
+function renderSettings() {
+  const gameType = state.settings.gameType;
+  const definition = GAME_DEFINITIONS[gameType];
+  const player = currentPlayer();
+  document.getElementById('settingsTitle').textContent = `${definition.label}設定`;
+  document.getElementById('levelSetting').classList.toggle('hidden', gameType === 'multiplication');
+
+  document.querySelectorAll('[data-level]').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.level === state.settings.level);
+  });
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.mode === state.settings.mode);
+  });
+
+  const title = document.getElementById('scoreboardTitle');
+  title.textContent = player ? `${player.name}・${definition.label}` : definition.label;
+  renderScoreboardRows(player, gameType);
+}
+
+function renderScoreboardRows(player, gameType) {
+  const root = document.getElementById('scoreboardRows');
+  root.innerHTML = '';
+  if (!player) return;
+
+  GAME_DEFINITIONS[gameType].levels.forEach(level => {
+    const record = playerRecord(player, gameType, level);
+    const row = document.createElement('div');
+    row.className = 'scoreboard-row' + (level === selectedLevel(gameType) ? ' selected' : '');
+    const lastScore = record.lastScore == null ? '—' : `${record.lastScore} 分`;
+    row.innerHTML = `
+      <strong>${LEVEL_DEFINITIONS[level].label}</strong>
+      <span>最高 <b>${record.highScore} 分</b></span>
+      <span>最近 <b>${lastScore}</b></span>
+      <span>玩過 <b>${record.plays} 次</b></span>
+    `;
+    root.appendChild(row);
+  });
+}
+
 function showScreen(name) {
   Object.values(screens).forEach(el => el.classList.remove('active'));
   screens[name].classList.add('active');
@@ -114,6 +238,8 @@ function startGame() {
 
   game = {
     playerId: player.id,
+    gameType: state.settings.gameType,
+    level: selectedLevel(),
     score: 0,
     correct: 0,
     wrong: 0,
@@ -148,10 +274,10 @@ function nextQuestion() {
   game.answerUnlockAt = Date.now() + 300;
   game.input = '';
   game.questionNumber += 1;
-  game.current = generateQuestion(currentPlayer());
+  game.current = generateQuestion(playerRecord(currentPlayer(), game.gameType, game.level), game.gameType, game.level);
 
-  document.getElementById('questionMeta').textContent = `第 ${game.questionNumber} 題`;
-  document.getElementById('questionText').textContent = `${game.current.a} × ${game.current.b} = ?`;
+  document.getElementById('questionMeta').textContent = `${GAME_DEFINITIONS[game.gameType].label}・${LEVEL_DEFINITIONS[game.level].label}・第 ${game.questionNumber} 題`;
+  document.getElementById('questionText').textContent = `${game.current.a} ${game.current.operator} ${game.current.b} = ?`;
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('remoteHint').textContent = '方向鍵選擇答案・OK 確認';
@@ -162,13 +288,15 @@ function nextQuestion() {
   else renderKeypad();
 }
 
-function generateQuestion(player) {
+function generateQuestion(record, gameType, level) {
+  if (gameType !== 'multiplication') return generateArithmeticQuestion(record, gameType, level);
+
   const candidates = [];
   for (let a = 2; a <= 9; a++) {
     for (let b = 2; b <= 9; b++) {
       const key = `${a}x${b}`;
-      const stats = player.questionStats[key] || { correct: 0, wrong: 0 };
-      const weight = 1 + stats.wrong * 2 - Math.min(stats.correct, 3) * 0.15;
+      const stats = record.questionStats[key] || { correct: 0, wrong: 0 };
+      const weight = questionWeight(stats);
       candidates.push({ a, b, key, weight: Math.max(.5, weight) });
     }
   }
@@ -176,10 +304,65 @@ function generateQuestion(player) {
   let pick = Math.random() * total;
   for (const q of candidates) {
     pick -= q.weight;
-    if (pick <= 0) return { ...q, answer: q.a * q.b };
+    if (pick <= 0) return { ...q, operator: '×', answer: q.a * q.b };
   }
   const q = candidates[candidates.length - 1];
-  return { ...q, answer: q.a * q.b };
+  return { ...q, operator: '×', answer: q.a * q.b };
+}
+
+function generateArithmeticQuestion(record, gameType, level) {
+  const { min, max } = LEVEL_DEFINITIONS[level];
+  const candidates = new Map();
+
+  Object.entries(record.questionStats)
+    .filter(([, stats]) => (stats.wrong || 0) > 0)
+    .sort(([, a], [, b]) => (b.wrong || 0) - (a.wrong || 0))
+    .slice(0, 12)
+    .forEach(([key, stats]) => {
+      const parsed = parseArithmeticKey(key, gameType);
+      if (parsed && parsed.a >= min && parsed.a <= max && parsed.b >= min && parsed.b <= max) {
+        candidates.set(key, { ...parsed, key, weight: questionWeight(stats) + 2 });
+      }
+    });
+
+  while (candidates.size < 42) {
+    let a = randomInteger(min, max);
+    let b = randomInteger(min, max);
+    if (gameType === 'subtraction' && b > a) [a, b] = [b, a];
+    const operator = gameType === 'addition' ? '+' : '−';
+    const key = `${a}${operator}${b}`;
+    const stats = record.questionStats[key] || { correct: 0, wrong: 0 };
+    candidates.set(key, { a, b, operator, key, weight: questionWeight(stats) });
+  }
+
+  const list = [...candidates.values()];
+  const total = list.reduce((sum, question) => sum + question.weight, 0);
+  let pick = Math.random() * total;
+  for (const question of list) {
+    pick -= question.weight;
+    if (pick <= 0) return { ...question, answer: calculateAnswer(question, gameType) };
+  }
+  const question = list[list.length - 1];
+  return { ...question, answer: calculateAnswer(question, gameType) };
+}
+
+function questionWeight(stats) {
+  return Math.max(.5, 1 + (stats.wrong || 0) * 2 - Math.min(stats.correct || 0, 3) * .15);
+}
+
+function parseArithmeticKey(key, gameType) {
+  const separator = gameType === 'addition' ? '+' : '−';
+  const parts = key.split(separator).map(Number);
+  if (parts.length !== 2 || parts.some(value => !Number.isFinite(value))) return null;
+  return { a: parts[0], b: parts[1], operator: separator };
+}
+
+function calculateAnswer(question, gameType) {
+  return gameType === 'addition' ? question.a + question.b : question.a - question.b;
+}
+
+function randomInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function renderChoices() {
@@ -187,7 +370,7 @@ function renderChoices() {
   document.getElementById('keypadArea').classList.add('hidden');
   const area = document.getElementById('choiceArea');
   area.innerHTML = '';
-  makeChoiceOptions(game.current.answer).forEach(value => {
+  makeChoiceOptions(game.current).forEach(value => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
     btn.textContent = value;
@@ -198,13 +381,16 @@ function renderChoices() {
   requestAnimationFrame(() => focusFirst(area));
 }
 
-function makeChoiceOptions(answer) {
+function makeChoiceOptions(question) {
+  const answer = question.answer;
   const values = new Set([answer]);
-  const offsets = [-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9,10];
+  const place = answer >= 1000 ? 100 : answer >= 100 ? 10 : answer >= 20 ? 5 : 1;
+  const offsets = [-place * 2, -place, -10, -5, -2, -1, 1, 2, 5, 10, place, place * 2]
+    .filter(offset => offset !== 0);
   while (values.size < 4) {
     const offset = offsets[Math.floor(Math.random() * offsets.length)];
     const candidate = answer + offset;
-    if (candidate >= 1 && candidate <= 81) values.add(candidate);
+    if (candidate >= 0) values.add(candidate);
   }
   return shuffle([...values]);
 }
@@ -233,7 +419,8 @@ function renderKeypad() {
 }
 
 function appendDigit(num) {
-  if (game.answered || game.input.length >= 2) return;
+  const maxLength = Math.max(1, String(game.current.answer).length);
+  if (game.answered || game.input.length >= maxLength) return;
   game.input += String(num);
   updateKeypadDisplay();
 }
@@ -252,7 +439,8 @@ function submitAnswer(value, sourceButton) {
   game.answered = true;
   const correct = value === game.current.answer;
   const player = currentPlayer();
-  const stats = player.questionStats[game.current.key] || { correct: 0, wrong: 0 };
+  const record = playerRecord(player, game.gameType, game.level);
+  const stats = record.questionStats[game.current.key] || { correct: 0, wrong: 0 };
 
   if (correct) {
     game.score += 10;
@@ -264,7 +452,7 @@ function submitAnswer(value, sourceButton) {
     game.timeLeft = Math.max(0, game.timeLeft - 5);
     game.finishAfterFeedback = game.timeLeft <= 0;
   }
-  player.questionStats[game.current.key] = stats;
+  record.questionStats[game.current.key] = stats;
   saveState();
   updateHud();
 
@@ -318,9 +506,10 @@ function finishGame() {
   clearInterval(timerId);
   timerId = null;
   const player = currentPlayer();
-  player.lastScore = game.score;
-  player.highScore = Math.max(player.highScore || 0, game.score);
-  player.plays = (player.plays || 0) + 1;
+  const record = playerRecord(player, game.gameType, game.level);
+  record.lastScore = game.score;
+  record.highScore = Math.max(record.highScore || 0, game.score);
+  record.plays = (record.plays || 0) + 1;
   saveState();
 
   const total = game.correct + game.wrong;
@@ -330,7 +519,8 @@ function finishGame() {
   document.getElementById('correctCount').textContent = game.correct;
   document.getElementById('wrongCount').textContent = game.wrong;
   document.getElementById('accuracyText').textContent = `${accuracy}%`;
-  document.getElementById('highScoreText').textContent = player.highScore;
+  document.getElementById('highScoreLabel').textContent = game.gameType === 'multiplication' ? '本遊戲最高' : '本級最高';
+  document.getElementById('highScoreText').textContent = record.highScore;
   showScreen('result');
 }
 
@@ -373,7 +563,7 @@ function renderManagePlayers() {
     const row = document.createElement('div');
     row.className = 'manage-row';
     const info = document.createElement('div');
-    info.innerHTML = `<strong>${escapeHtml(player.name)}</strong><br><small>最高 ${player.highScore} 分 · 遊玩 ${player.plays || 0} 次</small>`;
+    info.innerHTML = `<strong>${escapeHtml(player.name)}</strong><br><small>各遊戲分開記錄 · 共玩 ${totalPlayerPlays(player)} 次</small>`;
     const actions = document.createElement('div');
     actions.className = 'manage-actions';
     const clear = document.createElement('button');
@@ -422,6 +612,7 @@ function confirmPlayerAction() {
     player.lastScore = null;
     player.plays = 0;
     player.questionStats = {};
+    player.progress = createProgressMap();
   } else {
     state.players = state.players.filter(item => item.id !== playerId);
     if (state.currentPlayerId === playerId) state.currentPlayerId = state.players[0]?.id || null;
@@ -431,6 +622,13 @@ function confirmPlayerAction() {
   renderHome();
   renderManagePlayers();
   requestAnimationFrame(() => focusFirst(screens.manage));
+}
+
+function totalPlayerPlays(player) {
+  ensurePlayerProgress(player);
+  return Object.values(player.progress).reduce((gameTotal, levels) => {
+    return gameTotal + Object.values(levels).reduce((levelTotal, record) => levelTotal + (record.plays || 0), 0);
+  }, 0);
 }
 
 function focusable(root = document) {
@@ -619,8 +817,19 @@ document.addEventListener('click', event => {
   if (action === 'back-home') { game = null; renderHome(); showScreen('players'); }
 
   const mode = event.target.closest('[data-mode]')?.dataset.mode;
-  if (mode) { state.settings.mode = mode; saveState(); renderHome(); }
-  if (event.target.closest('[data-game="multiplication"]')) showScreen('settings');
+  if (mode) {
+    state.settings.mode = mode;
+    saveState();
+    renderSettings();
+  }
+  const level = event.target.closest('[data-level]')?.dataset.level;
+  if (level) {
+    state.settings.level = level;
+    saveState();
+    renderSettings();
+  }
+  const gameType = event.target.closest('[data-game]')?.dataset.game;
+  if (gameType) selectGame(gameType);
 });
 
 document.getElementById('playerForm').addEventListener('submit', event => {

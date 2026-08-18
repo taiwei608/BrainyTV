@@ -45,7 +45,8 @@
             <span class="game-icon">×</span>
             <span class="game-copy"><strong>九九乘法</strong><small>隨機出題・錯題加強</small></span>
           </button>
-          <button class="game-card disabled" disabled><span class="game-icon">＋</span><span class="game-copy"><strong>加減法</strong><small>敬請期待</small></span></button>
+          <button class="game-card addition-card" data-game="addition"><span class="game-icon">＋</span><span class="game-copy"><strong>加法挑戰</strong><small>個位・十位・百位</small></span></button>
+          <button class="game-card subtraction-card" data-game="subtraction"><span class="game-icon">−</span><span class="game-copy"><strong>減法挑戰</strong><small>個位・十位・百位</small></span></button>
           <button class="game-card disabled" disabled><span class="game-icon">A</span><span class="game-copy"><strong>英文單字</strong><small>敬請期待</small></span></button>
           <button class="game-card disabled" disabled><span class="game-icon">字</span><span class="game-copy"><strong>國字練習</strong><small>敬請期待</small></span></button>
         </div>
@@ -59,17 +60,36 @@
         <div class="player-badge selected-player-badge">—</div>
       </header>
       <section class="panel settings-panel">
-        <div class="fixed-duration"><span>每局時間</span><strong>60 秒</strong></div>
-        <div class="setting-block">
-          <span class="setting-label">答題模式</span>
-          <div class="segmented focus-grid" id="modeOptions">
-            <button class="option selected" data-mode="choice">四選一</button>
-            <button class="option" data-mode="keypad">數字輸入</button>
+        <div class="settings-layout">
+          <div class="settings-controls">
+            <div class="fixed-duration"><span>每局時間</span><strong>60 秒</strong></div>
+            <div id="levelSetting" class="setting-block">
+              <span class="setting-label">數字範圍</span>
+              <div class="segmented focus-grid" id="levelOptions">
+                <button class="option selected" data-level="ones">個位數</button>
+                <button class="option" data-level="tens">十位數</button>
+                <button class="option" data-level="hundreds">百位數</button>
+              </div>
+            </div>
+            <div class="setting-block">
+              <span class="setting-label">答題模式</span>
+              <div class="segmented focus-grid" id="modeOptions">
+                <button class="option selected" data-mode="choice">四選一</button>
+                <button class="option" data-mode="keypad">數字輸入</button>
+              </div>
+            </div>
+            <div class="inline-actions settings-actions">
+              <button class="btn secondary" data-action="back-games">返回選遊戲</button>
+              <button class="btn primary" data-action="start-game">開始遊戲</button>
+            </div>
           </div>
-        </div>
-        <div class="inline-actions settings-actions">
-          <button class="btn secondary" data-action="back-games">返回選遊戲</button>
-          <button class="btn primary" data-action="start-game">開始遊戲</button>
+          <aside class="scoreboard" aria-labelledby="scoreboardTitle">
+            <div class="scoreboard-heading">
+              <span>本遊戲紀錄</span>
+              <strong id="scoreboardTitle">—</strong>
+            </div>
+            <div id="scoreboardRows" class="scoreboard-rows"></div>
+          </aside>
         </div>
       </section>
     </section>
@@ -125,7 +145,7 @@
         <div><span>答對</span><strong id="correctCount">0</strong></div>
         <div><span>答錯</span><strong id="wrongCount">0</strong></div>
         <div><span>正確率</span><strong id="accuracyText">0%</strong></div>
-        <div><span>最高分</span><strong id="highScoreText">0</strong></div>
+        <div><span id="highScoreLabel">本級最高</span><strong id="highScoreText">0</strong></div>
       </div>
       <div class="result-actions focus-grid">
         <button class="btn primary" data-action="play-again">再玩一次</button>

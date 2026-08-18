@@ -10,7 +10,7 @@
 
 這是一個以 **Google TV / Android TV 遙控器** 為主要操作方式的家庭學習遊戲平台。
 
-第一個遊戲是給小朋友練習 **九九乘法**。未來會擴充成包含加減法、英文單字、國字等內容的家庭學習平台。
+目前提供 **九九乘法、加法與減法**。未來會擴充成包含英文單字、國字等內容的家庭學習平台。
 
 這不是只為桌面瀏覽器設計的網站；**TV-first UX** 是核心需求。
 
@@ -84,7 +84,8 @@
 第一版可顯示：
 
 - 九九乘法 — 可玩
-- 加減法 — 敬請期待
+- 加法挑戰 — 可玩
+- 減法挑戰 — 可玩
 - 英文單字 — 敬請期待
 - 國字練習 — 敬請期待
 
@@ -103,9 +104,9 @@
 每位玩家需要獨立記錄：
 
 - 玩家名稱
-- 歷史最高分
-- 最近一次成績
-- 遊玩次數
+- 各遊戲、各級別的歷史最高分
+- 各遊戲、各級別的最近一次成績
+- 各遊戲、各級別的遊玩次數
 - 各題答對次數
 - 各題答錯次數
 
@@ -161,6 +162,16 @@
 已經很熟的題目可以稍微降低出現機率，但不要完全消失。
 
 這是長期很重要的學習機制。
+
+### 加法與減法
+
+- 個位數：兩個運算數為 1–9。
+- 十位數：兩個運算數為 10–99。
+- 百位數：兩個運算數為 100–999。
+- 減法會把較大的數放前面，不出現負數答案。
+- 加法與減法也使用錯題加權。
+- 個位數、十位數、百位數各自保存最高分、最近成績、遊玩次數與題目統計。
+- 記分板只在選擇某個遊戲後顯示，不在玩家首頁混合不同遊戲的最高分。
 
 ---
 
@@ -379,12 +390,13 @@ Google TV 不應假設一定有官方 Chrome 可直接啟動。
 
 - 家庭學習平台首頁
 - 九九乘法入口
+- 加法挑戰（個位／十位／百位）
+- 減法挑戰（個位／十位／百位、答案不為負數）
 - 多玩家
 - Local Storage
 - 玩家選擇
-- 玩家最高分
-- 最近一次分數
-- 遊玩次數
+- 各遊戲、各級別分開的最高分／最近分數／遊玩次數
+- 選擇遊戲後才顯示的專屬紀錄板
 - 清除紀錄
 - 刪除玩家
 - 固定 60 秒與可視化倒數
@@ -417,13 +429,19 @@ family-learning-tv-v1
     {
       id,
       name,
-      highScore,
-      lastScore,
-      plays,
-      questionStats: {
-        "6x7": {
-          correct: 3,
-          wrong: 2
+      progress: {
+        multiplication: {
+          all: { highScore, lastScore, plays, questionStats }
+        },
+        addition: {
+          ones: { highScore, lastScore, plays, questionStats },
+          tens: { highScore, lastScore, plays, questionStats },
+          hundreds: { highScore, lastScore, plays, questionStats }
+        },
+        subtraction: {
+          ones: { highScore, lastScore, plays, questionStats },
+          tens: { highScore, lastScore, plays, questionStats },
+          hundreds: { highScore, lastScore, plays, questionStats }
         }
       }
     }
@@ -431,12 +449,14 @@ family-learning-tv-v1
   currentPlayerId,
   settings: {
     duration: 60,
-    mode: "choice"
+    mode: "choice",
+    gameType: "multiplication",
+    level: "ones"
   }
 }
 ```
 
-如果未來修改資料結構，請考慮 migration，不要直接讓既有玩家資料全部失效。
+既有頂層 `highScore`、`lastScore`、`plays`、`questionStats` 會自動遷移到 `progress.multiplication.all`，不要移除 migration。
 
 ---
 
@@ -529,7 +549,6 @@ family-learning-tv-v1
 
 ### P4 — 新遊戲
 
-- 加減法
 - 除法
 - 英文單字
 - 國字
