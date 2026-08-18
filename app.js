@@ -11,7 +11,9 @@ let game = null;
 let timerId = null;
 
 const screens = {
-  home: document.getElementById('homeScreen'),
+  players: document.getElementById('playerScreen'),
+  games: document.getElementById('gamesScreen'),
+  settings: document.getElementById('settingsScreen'),
   game: document.getElementById('gameScreen'),
   result: document.getElementById('resultScreen')
 };
@@ -19,7 +21,9 @@ const screens = {
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return saved ? { ...defaultState, ...saved, settings: { ...defaultState.settings, ...(saved.settings || {}) } } : structuredClone(defaultState);
+    const loaded = saved ? { ...defaultState, ...saved, settings: { ...defaultState.settings, ...(saved.settings || {}) } } : structuredClone(defaultState);
+    loaded.settings.duration = 60;
+    return loaded;
   } catch {
     return structuredClone(defaultState);
   }
@@ -70,7 +74,7 @@ function renderHome() {
         state.currentPlayerId = player.id;
         saveState();
         renderHome();
-        btn.focus();
+        requestAnimationFrame(() => document.querySelector(`[data-player-id="${player.id}"]`)?.focus());
       });
       list.appendChild(btn);
     });
@@ -79,9 +83,8 @@ function renderHome() {
   const badge = document.getElementById('currentPlayerBadge');
   const player = currentPlayer();
   badge.textContent = player ? `玩家：${player.name}` : '尚未選擇玩家';
-
-  document.querySelectorAll('[data-duration]').forEach(btn => {
-    btn.classList.toggle('selected', Number(btn.dataset.duration) === state.settings.duration);
+  document.querySelectorAll('.selected-player-badge').forEach(el => {
+    el.textContent = player ? `玩家：${player.name}` : '尚未選擇玩家';
   });
   document.querySelectorAll('[data-mode]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.mode === state.settings.mode);
@@ -263,6 +266,10 @@ function updateHud() {
   if (!game) return;
   document.getElementById('scoreText').textContent = game.score;
   document.getElementById('timeText').textContent = game.timeLeft;
+  const progress = document.getElementById('timerProgress');
+  const ratio = Math.max(0, game.timeLeft / 60);
+  progress.style.width = `${ratio * 100}%`;
+  progress.classList.toggle('urgent', game.timeLeft <= 10);
 }
 
 function finishGame() {
@@ -390,13 +397,20 @@ function handleRemoteKey(event) {
     return;
   }
 
-  if (action === 'back' && screens.game.classList.contains('active')) {
+  if (action === 'back') {
     event.preventDefault();
     event.stopPropagation();
-    clearInterval(timerId);
-    timerId = null;
-    game = null;
-    showScreen('home');
+    if (screens.game.classList.contains('active')) {
+      clearInterval(timerId);
+      timerId = null;
+      game = null;
+      renderHome();
+      showScreen('players');
+    } else if (screens.settings.classList.contains('active')) {
+      showScreen('games');
+    } else if (screens.games.classList.contains('active') || screens.result.classList.contains('active')) {
+      showScreen('players');
+    }
   }
 }
 
@@ -429,14 +443,21 @@ document.addEventListener('click', event => {
     document.getElementById('manageDialog').showModal();
   }
   if (action === 'close-manage') document.getElementById('manageDialog').close();
+  if (action === 'choose-game') {
+    if (!currentPlayer()) {
+      document.getElementById('playerDialog').showModal();
+      setTimeout(() => document.getElementById('playerName').focus(), 50);
+    } else showScreen('games');
+  }
+  if (action === 'back-players') showScreen('players');
+  if (action === 'back-games') showScreen('games');
+  if (action === 'start-game') startGame();
   if (action === 'play-again') startGame();
-  if (action === 'back-home') { game = null; renderHome(); showScreen('home'); }
+  if (action === 'back-home') { game = null; renderHome(); showScreen('players'); }
 
-  const duration = event.target.closest('[data-duration]')?.dataset.duration;
-  if (duration) { state.settings.duration = Number(duration); saveState(); renderHome(); }
   const mode = event.target.closest('[data-mode]')?.dataset.mode;
   if (mode) { state.settings.mode = mode; saveState(); renderHome(); }
-  if (event.target.closest('[data-game="multiplication"]')) startGame();
+  if (event.target.closest('[data-game="multiplication"]')) showScreen('settings');
 });
 
 document.getElementById('playerForm').addEventListener('submit', event => {

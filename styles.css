@@ -11,12 +11,13 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top, #1e293b 0, #0f172a 46%, #020617 100%); }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { margin: 0; background: radial-gradient(circle at top, #1e293b 0, #0f172a 46%, #020617 100%); }
 button, input { font: inherit; }
 button { cursor: pointer; }
 
-.app-shell { min-height: 100vh; padding: clamp(28px, 4vw, 64px); }
-.screen { display: none; min-height: calc(100vh - 8vw); }
+.app-shell { height: 100vh; height: 100dvh; padding: clamp(24px, 3vw, 48px); overflow: hidden; }
+.screen { display: none; height: 100%; overflow: hidden; }
 .screen.active { display: block; }
 
 .topbar, .game-hud { display: flex; justify-content: space-between; align-items: center; gap: 28px; }
@@ -27,6 +28,9 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 
 .player-badge { padding: 14px 22px; border-radius: 999px; background: var(--surface); color: var(--text-soft); font-size: clamp(18px, 1.7vw, 28px); font-weight: 800; }
 .tv-bro-hint { margin: 22px 0 0; padding: 12px 18px; border: 1px solid rgba(147,197,253,.35); border-radius: 16px; background: rgba(30,64,175,.2); color: #dbeafe; font-size: clamp(16px,1.25vw,21px); }
+.single-step-layout { display: grid; place-items: center; height: calc(100% - 175px); }
+.player-panel { width: min(1100px, 100%); }
+.step-next { margin-left: auto; }
 .home-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; margin-top: 34px; }
 .panel { background: rgba(24,34,53,.9); border: 1px solid rgba(255,255,255,.08); border-radius: 28px; padding: 30px; }
 .player-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; min-height: 100px; }
@@ -48,6 +52,7 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 #modeOptions { grid-template-columns: repeat(2, 1fr); }
 
 .games-section { margin-top: 32px; }
+#gamesScreen .games-section { display: flex; flex-direction: column; justify-content: center; height: calc(100% - 145px); }
 .game-cards { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; }
 .game-card { min-height: 160px; padding: 24px; display: flex; align-items: center; gap: 20px; text-align: left; }
 .game-card.featured { background: linear-gradient(135deg,#1d4ed8,#312e81); }
@@ -60,6 +65,11 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .game-hud > div { display: flex; flex-direction: column; min-width: 140px; }
 .hud-label { color: var(--text-soft); font-size: 18px; }
 .game-hud strong { font-size: clamp(30px,3vw,48px); }
+.countdown { align-items: flex-end; }
+.countdown strong { color: #fde68a; }
+.timer-track { height: 12px; margin: 12px 8px 0; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.12); }
+.timer-progress { width: 100%; height: 100%; border-radius: inherit; background: #22c55e; transition: width .25s linear, background-color .25s ease; }
+.timer-progress.urgent { background: #fb7185; }
 .question-wrap { text-align: center; padding: 7vh 0 4vh; }
 .question-meta { color: var(--text-soft); font-size: clamp(18px,1.5vw,26px); }
 .question-text { font-size: clamp(72px,10vw,160px); line-height: 1; margin-bottom: 22px; }
@@ -94,6 +104,10 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .dialog-card.wide { width: min(900px,92vw); }
 .dialog-card label { display: block; color: var(--text-soft); margin-bottom: 10px; font-size: 20px; }
 .dialog-card input { width: 100%; border: 2px solid #475569; background: #0f172a; color: #fff; border-radius: 16px; padding: 18px; font-size: 30px; }
+.settings-panel { width: min(900px, 100%); margin: clamp(40px,8vh,100px) auto 0; }
+.fixed-duration { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; margin-bottom: 28px; border-radius: 20px; background: rgba(37,99,235,.22); color: var(--text-soft); font-size: 24px; }
+.fixed-duration strong { color: #fff; font-size: 38px; }
+.settings-actions { justify-content: space-between; margin-top: 34px; }
 .manage-list { display: grid; gap: 14px; max-height: 55vh; overflow: auto; }
 .manage-row { background: #22304a; border-radius: 18px; padding: 18px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; }
 .manage-row strong { font-size: 28px; }

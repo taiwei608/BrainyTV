@@ -9,11 +9,11 @@
 </head>
 <body>
   <main id="app" class="app-shell">
-    <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
+    <section id="playerScreen" class="screen active" aria-labelledby="playerTitle">
       <header class="topbar">
         <div>
           <p class="eyebrow">Google TV 家庭學習</p>
-          <h1 id="homeTitle">今天要玩什麼？</h1>
+          <h1 id="playerTitle">誰要來挑戰？</h1>
         </div>
         <div id="currentPlayerBadge" class="player-badge">尚未選擇玩家</div>
       </header>
@@ -22,38 +22,25 @@
         TV Bro 建議：長按 OK 開啟選單，啟用「Direct navigation／直接導覽」，即可用方向鍵切換按鈕。
       </p>
 
-      <div class="home-grid">
-        <section class="panel">
+      <div class="single-step-layout">
+        <section class="panel player-panel">
           <h2>選擇玩家</h2>
           <div id="playerList" class="player-list focus-grid"></div>
           <div class="inline-actions">
             <button class="btn secondary" data-action="add-player">＋ 新增玩家</button>
             <button class="btn danger" data-action="manage-player">玩家管理</button>
-          </div>
-        </section>
-
-        <section class="panel">
-          <h2>遊戲設定</h2>
-          <div class="setting-block">
-            <span class="setting-label">時間</span>
-            <div class="segmented focus-grid" id="durationOptions">
-              <button class="option selected" data-duration="60">60 秒</button>
-              <button class="option" data-duration="90">90 秒</button>
-              <button class="option" data-duration="120">120 秒</button>
-            </div>
-          </div>
-          <div class="setting-block">
-            <span class="setting-label">模式</span>
-            <div class="segmented focus-grid" id="modeOptions">
-              <button class="option selected" data-mode="choice">四選一</button>
-              <button class="option" data-mode="keypad">數字輸入</button>
-            </div>
+            <button class="btn primary step-next" data-action="choose-game">下一步：選遊戲</button>
           </div>
         </section>
       </div>
+    </section>
 
-      <section class="games-section">
-        <h2>遊戲</h2>
+    <section id="gamesScreen" class="screen" aria-labelledby="gamesTitle">
+      <header class="topbar">
+        <div><p class="eyebrow">步驟 2</p><h1 id="gamesTitle">選擇遊戲</h1></div>
+        <div class="player-badge selected-player-badge">—</div>
+      </header>
+      <section class="games-section panel">
         <div class="game-cards focus-grid">
           <button class="game-card featured" data-game="multiplication">
             <span class="game-icon">×</span>
@@ -63,6 +50,28 @@
           <button class="game-card disabled" disabled><span class="game-icon">A</span><span class="game-copy"><strong>英文單字</strong><small>敬請期待</small></span></button>
           <button class="game-card disabled" disabled><span class="game-icon">字</span><span class="game-copy"><strong>國字練習</strong><small>敬請期待</small></span></button>
         </div>
+        <div class="inline-actions"><button class="btn secondary" data-action="back-players">返回選玩家</button></div>
+      </section>
+    </section>
+
+    <section id="settingsScreen" class="screen" aria-labelledby="settingsTitle">
+      <header class="topbar">
+        <div><p class="eyebrow">步驟 3</p><h1 id="settingsTitle">九九乘法設定</h1></div>
+        <div class="player-badge selected-player-badge">—</div>
+      </header>
+      <section class="panel settings-panel">
+        <div class="fixed-duration"><span>每局時間</span><strong>60 秒</strong></div>
+        <div class="setting-block">
+          <span class="setting-label">答題模式</span>
+          <div class="segmented focus-grid" id="modeOptions">
+            <button class="option selected" data-mode="choice">四選一</button>
+            <button class="option" data-mode="keypad">數字輸入</button>
+          </div>
+        </div>
+        <div class="inline-actions settings-actions">
+          <button class="btn secondary" data-action="back-games">返回選遊戲</button>
+          <button class="btn primary" data-action="start-game">開始遊戲</button>
+        </div>
       </section>
     </section>
 
@@ -70,8 +79,9 @@
       <div class="game-hud">
         <div><span class="hud-label">玩家</span><strong id="hudPlayer">—</strong></div>
         <div><span class="hud-label">分數</span><strong id="scoreText">0</strong></div>
-        <div><span class="hud-label">時間</span><strong id="timeText">60</strong></div>
+        <div class="countdown"><span class="hud-label">還剩下</span><strong><span id="timeText">60</span> 秒</strong></div>
       </div>
+      <div class="timer-track" aria-hidden="true"><div id="timerProgress" class="timer-progress"></div></div>
 
       <div class="question-wrap">
         <p id="questionMeta" class="question-meta">第 1 題</p>
