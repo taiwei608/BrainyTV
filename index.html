@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
-  <title>家庭學習遊戲</title>
+  <title>Brainy Arena</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,15 +12,14 @@
     <section id="playerScreen" class="screen active" aria-labelledby="playerTitle">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Google TV 家庭學習</p>
+          <div class="brand-lockup">
+            <span class="brand-symbol" aria-hidden="true">B</span>
+            <p class="eyebrow">BRAINY ARENA</p>
+          </div>
           <h1 id="playerTitle">誰要來挑戰？</h1>
         </div>
         <div id="currentPlayerBadge" class="player-badge">尚未選擇玩家</div>
       </header>
-
-      <p class="tv-bro-hint">
-        TV Bro 建議：長按 OK 開啟選單，啟用「Direct navigation／直接導覽」，即可用方向鍵切換按鈕。
-      </p>
 
       <div class="single-step-layout">
         <section class="panel player-panel">
@@ -75,11 +74,29 @@
       </section>
     </section>
 
+    <section id="manageScreen" class="screen" aria-labelledby="manageTitle">
+      <header class="topbar">
+        <div><p class="eyebrow">家長功能</p><h1 id="manageTitle">玩家管理</h1></div>
+      </header>
+      <section class="panel manage-screen-panel">
+        <div id="managePlayerList" class="manage-list"></div>
+        <div id="manageConfirmation" class="confirmation-panel hidden">
+          <p id="manageConfirmText" class="confirmation-text"></p>
+          <div class="dialog-actions">
+            <button class="btn primary" data-action="cancel-player-action">取消</button>
+            <button class="btn danger" data-action="confirm-player-action">確定</button>
+          </div>
+        </div>
+        <div id="manageDoneActions" class="dialog-actions"><button class="btn secondary" data-action="close-manage">完成，回玩家首頁</button></div>
+      </section>
+    </section>
+
     <section id="gameScreen" class="screen" aria-labelledby="questionText">
       <div class="game-hud">
         <div><span class="hud-label">玩家</span><strong id="hudPlayer">—</strong></div>
         <div><span class="hud-label">分數</span><strong id="scoreText">0</strong></div>
         <div class="countdown"><span class="hud-label">還剩下</span><strong><span id="timeText">60</span> 秒</strong></div>
+        <button class="exit-game-btn" data-action="exit-game" aria-label="退出目前遊戲">退出遊戲</button>
       </div>
       <div class="timer-track" aria-hidden="true"><div id="timerProgress" class="timer-progress"></div></div>
 
@@ -95,7 +112,9 @@
         <div id="keypadGrid" class="keypad-grid focus-grid"></div>
       </div>
 
-      <p class="remote-hint">方向鍵移動・OK 確認</p>
+      <div class="game-footer">
+        <p id="remoteHint" class="remote-hint">方向鍵選擇答案・OK 確認</p>
+      </div>
     </section>
 
     <section id="resultScreen" class="screen result-screen">
@@ -127,11 +146,14 @@
     </form>
   </dialog>
 
-  <dialog id="manageDialog" class="dialog">
-    <div class="dialog-card wide">
-      <h2>玩家管理</h2>
-      <div id="managePlayerList" class="manage-list"></div>
-      <div class="dialog-actions"><button class="btn secondary" data-action="close-manage">完成</button></div>
+  <dialog id="exitDialog" class="dialog">
+    <div class="dialog-card exit-confirmation">
+      <h2>要離開這一局嗎？</h2>
+      <p>這一局的分數不會保留。</p>
+      <div class="dialog-actions">
+        <button class="btn primary" data-action="continue-game">繼續玩</button>
+        <button class="btn danger" data-action="confirm-exit">離開遊戲</button>
+      </div>
     </div>
   </dialog>
 

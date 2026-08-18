@@ -11,11 +11,13 @@ const defaultState = {
 let state = loadState();
 let game = null;
 let timerId = null;
+let pendingPlayerAction = null;
 
 const screens = {
   players: document.getElementById('playerScreen'),
   games: document.getElementById('gamesScreen'),
   settings: document.getElementById('settingsScreen'),
+  manage: document.getElementById('manageScreen'),
   game: document.getElementById('gameScreen'),
   result: document.getElementById('resultScreen')
 };
@@ -118,6 +120,9 @@ function startGame() {
     questionNumber: 0,
     timeLeft: state.settings.duration,
     answered: false,
+    paused: false,
+    finishAfterFeedback: false,
+    answerUnlockAt: 0,
     input: '',
     current: null
   };
@@ -129,7 +134,8 @@ function startGame() {
 
   clearInterval(timerId);
   timerId = setInterval(() => {
-    game.timeLeft -= 1;
+    if (!game || game.answered || game.paused) return;
+    game.timeLeft = Math.max(0, game.timeLeft - 1);
     updateHud();
     if (game.timeLeft <= 0) finishGame();
   }, 1000);
@@ -138,6 +144,8 @@ function startGame() {
 function nextQuestion() {
   if (!game || game.timeLeft <= 0) return finishGame();
   game.answered = false;
+  game.finishAfterFeedback = false;
+  game.answerUnlockAt = Date.now() + 300;
   game.input = '';
   game.questionNumber += 1;
   game.current = generateQuestion(currentPlayer());
@@ -146,6 +154,9 @@ function nextQuestion() {
   document.getElementById('questionText').textContent = `${game.current.a} × ${game.current.b} = ?`;
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
+  document.getElementById('remoteHint').textContent = '方向鍵選擇答案・OK 確認';
+  screens.game.classList.remove('wrong-feedback');
+  document.querySelector('.countdown').classList.remove('time-penalty');
 
   if (state.settings.mode === 'choice') renderChoices();
   else renderKeypad();
@@ -153,8 +164,8 @@ function nextQuestion() {
 
 function generateQuestion(player) {
   const candidates = [];
-  for (let a = 1; a <= 9; a++) {
-    for (let b = 1; b <= 9; b++) {
+  for (let a = 2; a <= 9; a++) {
+    for (let b = 2; b <= 9; b++) {
       const key = `${a}x${b}`;
       const stats = player.questionStats[key] || { correct: 0, wrong: 0 };
       const weight = 1 + stats.wrong * 2 - Math.min(stats.correct, 3) * 0.15;
@@ -237,6 +248,7 @@ function updateKeypadDisplay() {
 
 function submitAnswer(value, sourceButton) {
   if (!game || game.answered) return;
+  if (Date.now() < game.answerUnlockAt) return;
   game.answered = true;
   const correct = value === game.current.answer;
   const player = currentPlayer();
@@ -249,14 +261,29 @@ function submitAnswer(value, sourceButton) {
   } else {
     game.wrong += 1;
     stats.wrong += 1;
+    game.timeLeft = Math.max(0, game.timeLeft - 5);
+    game.finishAfterFeedback = game.timeLeft <= 0;
   }
   player.questionStats[game.current.key] = stats;
   saveState();
   updateHud();
 
   const feedback = document.getElementById('feedback');
-  feedback.textContent = correct ? `答對了！答案是 ${game.current.answer}` : `答案是 ${game.current.answer}`;
+  feedback.textContent = correct ? `答對了！答案是 ${game.current.answer}` : `答錯了！正確答案是 ${game.current.answer}，扣 5 秒`;
   feedback.className = `feedback ${correct ? 'good' : 'bad'}`;
+
+  if (!correct) {
+    const countdown = document.querySelector('.countdown');
+    screens.game.classList.remove('wrong-feedback');
+    countdown.classList.remove('time-penalty');
+    void screens.game.offsetWidth;
+    screens.game.classList.add('wrong-feedback');
+    countdown.classList.add('time-penalty');
+    setTimeout(() => {
+      screens.game.classList.remove('wrong-feedback');
+      countdown.classList.remove('time-penalty');
+    }, 1600);
+  }
 
   if (state.settings.mode === 'choice') {
     document.querySelectorAll('.answer-btn').forEach(btn => {
@@ -265,6 +292,15 @@ function submitAnswer(value, sourceButton) {
       else if (btn === sourceButton) btn.classList.add('wrong');
     });
   }
+
+  document.getElementById('remoteHint').textContent = '按 OK 進入下一題';
+
+}
+
+function advanceAfterFeedback() {
+  if (!game?.answered) return;
+  if (game.finishAfterFeedback || game.timeLeft <= 0) finishGame();
+  else nextQuestion();
 }
 
 function updateHud() {
@@ -298,8 +334,40 @@ function finishGame() {
   showScreen('result');
 }
 
+function exitGame() {
+  clearInterval(timerId);
+  timerId = null;
+  game = null;
+  renderHome();
+  showScreen('players');
+}
+
+function openExitConfirmation() {
+  const dialog = document.getElementById('exitDialog');
+  if (dialog.open) return;
+  if (game) game.paused = true;
+  dialog.showModal();
+  requestAnimationFrame(() => focusFirst(dialog));
+}
+
+function closeExitConfirmation() {
+  const dialog = document.getElementById('exitDialog');
+  if (dialog.open) dialog.close();
+  if (game) game.paused = false;
+  requestAnimationFrame(() => {
+    const area = state.settings.mode === 'choice'
+      ? document.getElementById('choiceArea')
+      : document.getElementById('keypadGrid');
+    focusFirst(area);
+  });
+}
+
 function renderManagePlayers() {
   const root = document.getElementById('managePlayerList');
+  pendingPlayerAction = null;
+  root.classList.remove('hidden');
+  document.getElementById('manageConfirmation').classList.add('hidden');
+  document.getElementById('manageDoneActions').classList.remove('hidden');
   root.innerHTML = '';
   state.players.forEach(player => {
     const row = document.createElement('div');
@@ -310,21 +378,59 @@ function renderManagePlayers() {
     actions.className = 'manage-actions';
     const clear = document.createElement('button');
     clear.className = 'btn secondary'; clear.textContent = '清除紀錄';
-    clear.addEventListener('click', () => {
-      player.highScore = 0; player.lastScore = null; player.plays = 0; player.questionStats = {};
-      saveState(); renderManagePlayers(); renderHome();
-    });
+    clear.addEventListener('click', () => showPlayerActionConfirmation('clear', player.id));
     const del = document.createElement('button');
     del.className = 'btn danger'; del.textContent = '刪除';
-    del.addEventListener('click', () => {
-      state.players = state.players.filter(p => p.id !== player.id);
-      if (state.currentPlayerId === player.id) state.currentPlayerId = state.players[0]?.id || null;
-      saveState(); renderManagePlayers(); renderHome();
-    });
+    del.addEventListener('click', () => showPlayerActionConfirmation('delete', player.id));
     actions.append(clear, del);
     row.append(info, actions);
     root.appendChild(row);
   });
+}
+
+function showPlayerActionConfirmation(type, playerId) {
+  const player = state.players.find(item => item.id === playerId);
+  if (!player) return;
+  pendingPlayerAction = { type, playerId };
+  document.getElementById('managePlayerList').classList.add('hidden');
+  document.getElementById('manageDoneActions').classList.add('hidden');
+  const panel = document.getElementById('manageConfirmation');
+  const message = type === 'delete'
+    ? `確定要刪除「${player.name}」嗎？`
+    : `確定要清除「${player.name}」的所有成績嗎？`;
+  document.getElementById('manageConfirmText').textContent = message;
+  panel.classList.remove('hidden');
+  requestAnimationFrame(() => focusFirst(panel));
+}
+
+function cancelPlayerAction() {
+  pendingPlayerAction = null;
+  document.getElementById('manageConfirmation').classList.add('hidden');
+  document.getElementById('managePlayerList').classList.remove('hidden');
+  document.getElementById('manageDoneActions').classList.remove('hidden');
+  requestAnimationFrame(() => focusFirst(document.getElementById('managePlayerList')));
+}
+
+function confirmPlayerAction() {
+  if (!pendingPlayerAction) return;
+  const { type, playerId } = pendingPlayerAction;
+  const player = state.players.find(item => item.id === playerId);
+  if (!player) return renderManagePlayers();
+
+  if (type === 'clear') {
+    player.highScore = 0;
+    player.lastScore = null;
+    player.plays = 0;
+    player.questionStats = {};
+  } else {
+    state.players = state.players.filter(item => item.id !== playerId);
+    if (state.currentPlayerId === playerId) state.currentPlayerId = state.players[0]?.id || null;
+  }
+
+  saveState();
+  renderHome();
+  renderManagePlayers();
+  requestAnimationFrame(() => focusFirst(screens.manage));
 }
 
 function focusable(root = document) {
@@ -348,10 +454,24 @@ function focusWithoutScroll(el) {
   requestAnimationFrame(() => window.scrollTo(0, 0));
 }
 
+function navigationRoot() {
+  const openDialog = document.querySelector('dialog[open]');
+  if (openDialog) return openDialog;
+
+  if (screens.game.classList.contains('active')) {
+    return state.settings.mode === 'choice'
+      ? document.getElementById('choiceArea')
+      : document.getElementById('keypadGrid');
+  }
+
+  return Object.values(screens).find(screen => screen.classList.contains('active')) || document;
+}
+
 function moveFocus(direction) {
-  const items = focusable(document);
+  const root = navigationRoot();
+  const items = focusable(root);
   const current = document.activeElement;
-  if (!items.includes(current)) return focusFirst();
+  if (!items.includes(current)) return focusFirst(root);
   const rect = current.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
@@ -408,7 +528,9 @@ function handleRemoteKey(event) {
     event.preventDefault();
     event.stopPropagation();
     if (event.repeat) return;
-    if (game?.answered && screens.game.classList.contains('active')) nextQuestion();
+    if (document.querySelector('dialog[open]')) {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.click();
+    } else if (game?.answered && screens.game.classList.contains('active')) advanceAfterFeedback();
     else if (document.activeElement instanceof HTMLElement) document.activeElement.click();
     return;
   }
@@ -416,12 +538,20 @@ function handleRemoteKey(event) {
   if (action === 'back') {
     event.preventDefault();
     event.stopPropagation();
-    if (screens.game.classList.contains('active')) {
-      clearInterval(timerId);
-      timerId = null;
-      game = null;
-      renderHome();
-      showScreen('players');
+    const exitDialog = document.getElementById('exitDialog');
+    const playerDialog = document.getElementById('playerDialog');
+    if (exitDialog.open) {
+      closeExitConfirmation();
+    } else if (playerDialog.open) {
+      playerDialog.close();
+    } else if (screens.manage.classList.contains('active')) {
+      if (!document.getElementById('manageConfirmation').classList.contains('hidden')) cancelPlayerAction();
+      else {
+        renderHome();
+        showScreen('players');
+      }
+    } else if (screens.game.classList.contains('active')) {
+      openExitConfirmation();
     } else if (screens.settings.classList.contains('active')) {
       showScreen('games');
     } else if (screens.games.classList.contains('active') || screens.result.classList.contains('active')) {
@@ -462,9 +592,14 @@ document.addEventListener('click', event => {
   }
   if (action === 'manage-player') {
     renderManagePlayers();
-    document.getElementById('manageDialog').showModal();
+    showScreen('manage');
   }
-  if (action === 'close-manage') document.getElementById('manageDialog').close();
+  if (action === 'close-manage') {
+    renderHome();
+    showScreen('players');
+  }
+  if (action === 'cancel-player-action') cancelPlayerAction();
+  if (action === 'confirm-player-action') confirmPlayerAction();
   if (action === 'choose-game') {
     if (!currentPlayer()) {
       document.getElementById('playerDialog').showModal();
@@ -474,6 +609,12 @@ document.addEventListener('click', event => {
   if (action === 'back-players') showScreen('players');
   if (action === 'back-games') showScreen('games');
   if (action === 'start-game') startGame();
+  if (action === 'exit-game') openExitConfirmation();
+  if (action === 'continue-game') closeExitConfirmation();
+  if (action === 'confirm-exit') {
+    document.getElementById('exitDialog').close();
+    exitGame();
+  }
   if (action === 'play-again') startGame();
   if (action === 'back-home') { game = null; renderHome(); showScreen('players'); }
 
@@ -489,6 +630,15 @@ document.getElementById('playerForm').addEventListener('submit', event => {
   const input = document.getElementById('playerName');
   createPlayer(input.value);
   document.getElementById('playerDialog').close();
+});
+
+document.getElementById('exitDialog').addEventListener('cancel', event => {
+  event.preventDefault();
+  closeExitConfirmation();
+});
+
+document.getElementById('exitDialog').addEventListener('close', () => {
+  if (game) game.paused = false;
 });
 
 function shuffle(arr) {
