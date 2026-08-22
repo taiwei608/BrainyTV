@@ -25,6 +25,9 @@ let state = loadState();
 let game = null;
 let timerId = null;
 let pendingPlayerAction = null;
+let audioContext = null;
+let creatureSample = null;
+let creatureStopTimer = null;
 
 const screens = {
   players: document.getElementById('playerScreen'),
@@ -58,6 +61,115 @@ function saveState() {
 function cloneData(value) {
   if (typeof structuredClone === 'function') return structuredClone(value);
   return JSON.parse(JSON.stringify(value));
+}
+
+function getAudioContext() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+
+  try {
+    if (!audioContext) audioContext = new AudioContextClass();
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    return audioContext;
+  } catch {
+    return null;
+  }
+}
+
+function playTone(context, frequency, startAt, duration, type, volume) {
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startAt);
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.018);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startAt);
+  oscillator.stop(startAt + duration + 0.02);
+}
+
+function getCreatureSample() {
+  if (creatureSample || !window.Audio) return creatureSample;
+
+  try {
+    creatureSample = new window.Audio('assets/audio/pika-source.mp3');
+    creatureSample.preload = 'auto';
+    creatureSample.load();
+    return creatureSample;
+  } catch {
+    return null;
+  }
+}
+
+function playCreatureSample(correct) {
+  const sample = getCreatureSample();
+  if (!sample) return false;
+
+  try {
+    clearTimeout(creatureStopTimer);
+    sample.pause();
+    sample.currentTime = 0.02;
+    sample.volume = correct ? 1 : 0.9;
+    sample.playbackRate = correct ? 1.08 : 0.68;
+    sample.preservesPitch = false;
+    sample.webkitPreservesPitch = false;
+
+    const playback = sample.play();
+    if (playback?.catch) {
+      playback.catch(() => {
+        if (!playCreatureVoice(correct)) playToneFallback(correct);
+      });
+    }
+
+    creatureStopTimer = setTimeout(() => {
+      sample.pause();
+      sample.currentTime = 0;
+    }, correct ? 1250 : 1000);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function playCreatureVoice(correct) {
+  const SpeechCue = window.SpeechSynthesisUtterance;
+  if (!window.speechSynthesis || !SpeechCue) return false;
+
+  try {
+    window.speechSynthesis.cancel();
+    const cue = new SpeechCue(correct ? '皮卡皮！' : '皮卡……');
+    cue.lang = 'zh-TW';
+    cue.volume = 1;
+    cue.rate = correct ? 1.35 : 0.68;
+    cue.pitch = correct ? 1.9 : 0.58;
+    const voices = window.speechSynthesis.getVoices();
+    cue.voice = voices.find(voice => voice.lang === 'zh-TW') || voices.find(voice => voice.lang.startsWith('zh')) || null;
+    window.speechSynthesis.speak(cue);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function playToneFallback(correct) {
+  const context = getAudioContext();
+  if (!context) return;
+  const startAt = context.currentTime + 0.01;
+
+  if (correct) {
+    playTone(context, 659.25, startAt, 0.18, 'triangle', 0.11);
+    playTone(context, 783.99, startAt + 0.1, 0.18, 'triangle', 0.11);
+    playTone(context, 1046.5, startAt + 0.2, 0.24, 'triangle', 0.12);
+  } else {
+    playTone(context, 220, startAt, 0.32, 'triangle', 0.13);
+    playTone(context, 174.61, startAt + 0.24, 0.46, 'triangle', 0.14);
+  }
+}
+
+function playAnswerSound(correct) {
+  if (!playCreatureSample(correct) && !playCreatureVoice(correct)) playToneFallback(correct);
 }
 
 function emptyRecord() {
@@ -438,6 +550,7 @@ function submitAnswer(value, sourceButton) {
   if (Date.now() < game.answerUnlockAt) return;
   game.answered = true;
   const correct = value === game.current.answer;
+  playAnswerSound(correct);
   const player = currentPlayer();
   const record = playerRecord(player, game.gameType, game.level);
   const stats = record.questionStats[game.current.key] || { correct: 0, wrong: 0 };
@@ -692,6 +805,7 @@ function moveFocus(direction) {
 
 function remoteKey(event) {
   const key = event.key;
+  const physicalCode = event.code;
   const code = event.keyCode || event.which;
   const directions = {
     ArrowLeft: 'left', Left: 'left',
@@ -708,8 +822,44 @@ function remoteKey(event) {
   if (code === 19 || code === 38) return 'up';
   if (code === 20 || code === 40) return 'down';
   if (key === 'Enter' || key === 'Accept' || key === 'Select' || key === ' ' || code === 13 || code === 23 || code === 66) return 'ok';
-  if (key === 'Escape' || key === 'BrowserBack' || key === 'GoBack' || code === 4 || code === 27) return 'back';
+
+  const backKeys = ['Escape', 'BrowserBack', 'GoBack', 'Back', 'Backspace'];
+  const isBackspace = key === 'Backspace' || physicalCode === 'Backspace';
+  const textField = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target?.isContentEditable;
+  const backspaceIsEditing = isBackspace && textField && event.target.value;
+  if ((!backspaceIsEditing && (backKeys.includes(key) || backKeys.includes(physicalCode))) || code === 4 || code === 27 || code === 166) return 'back';
   return null;
+}
+
+let lastBackActionAt = 0;
+
+function handleBackAction() {
+  // Some Android TV browsers emit both a key event and a history event for
+  // one press. Treat those as the same action so a dialog is not opened and
+  // immediately closed again.
+  const now = Date.now();
+  if (now - lastBackActionAt < 300) return;
+  lastBackActionAt = now;
+
+  const exitDialog = document.getElementById('exitDialog');
+  const playerDialog = document.getElementById('playerDialog');
+  if (exitDialog.open) {
+    closeExitConfirmation();
+  } else if (playerDialog.open) {
+    playerDialog.close();
+  } else if (screens.manage.classList.contains('active')) {
+    if (!document.getElementById('manageConfirmation').classList.contains('hidden')) cancelPlayerAction();
+    else {
+      renderHome();
+      showScreen('players');
+    }
+  } else if (screens.game.classList.contains('active')) {
+    openExitConfirmation();
+  } else if (screens.settings.classList.contains('active')) {
+    showScreen('games');
+  } else if (screens.games.classList.contains('active') || screens.result.classList.contains('active')) {
+    showScreen('players');
+  }
 }
 
 function handleRemoteKey(event) {
@@ -736,25 +886,7 @@ function handleRemoteKey(event) {
   if (action === 'back') {
     event.preventDefault();
     event.stopPropagation();
-    const exitDialog = document.getElementById('exitDialog');
-    const playerDialog = document.getElementById('playerDialog');
-    if (exitDialog.open) {
-      closeExitConfirmation();
-    } else if (playerDialog.open) {
-      playerDialog.close();
-    } else if (screens.manage.classList.contains('active')) {
-      if (!document.getElementById('manageConfirmation').classList.contains('hidden')) cancelPlayerAction();
-      else {
-        renderHome();
-        showScreen('players');
-      }
-    } else if (screens.game.classList.contains('active')) {
-      openExitConfirmation();
-    } else if (screens.settings.classList.contains('active')) {
-      showScreen('games');
-    } else if (screens.games.classList.contains('active') || screens.result.classList.contains('active')) {
-      showScreen('players');
-    }
+    if (!event.repeat) handleBackAction();
   }
 }
 
@@ -767,6 +899,35 @@ window.addEventListener('keyup', event => {
     event.stopPropagation();
   }
 }, { capture: true });
+
+// TV Bro can consume the Android Back key as browser history navigation
+// without dispatching a KeyboardEvent to the page. A local guard entry turns
+// that navigation into the same in-app Back action used by Escape.
+const BACK_HISTORY_KEY = 'brainyArenaBackGuard';
+
+function armBackHistoryGuard() {
+  try {
+    if (history.state?.[BACK_HISTORY_KEY] === 'guard') return;
+    const currentState = history.state && typeof history.state === 'object' ? history.state : {};
+    history.replaceState({ ...currentState, [BACK_HISTORY_KEY]: 'base' }, document.title);
+    history.pushState({ ...currentState, [BACK_HISTORY_KEY]: 'guard' }, document.title);
+  } catch {
+    // Direct file previews and older TV WebViews may not allow History API
+    // changes; their key events are still handled above.
+  }
+}
+
+window.addEventListener('popstate', () => {
+  handleBackAction();
+  armBackHistoryGuard();
+});
+
+document.addEventListener('backbutton', event => {
+  event.preventDefault();
+  event.stopPropagation();
+  handleBackAction();
+  armBackHistoryGuard();
+});
 
 // In TV Bro cursor mode, keep the visible focus ring aligned with the item
 // under the cursor. Direct navigation mode remains the recommended option.
@@ -862,5 +1023,6 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
 }
 
+armBackHistoryGuard();
 renderHome();
 focusFirst();
