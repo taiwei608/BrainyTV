@@ -284,6 +284,61 @@ function renderHome() {
   });
 }
 
+function leaderboardResult(gameType, level) {
+  const contenders = state.players.map(player => ({
+    player,
+    record: playerRecord(player, gameType, level)
+  })).filter(entry => entry.record.plays > 0);
+
+  if (!contenders.length) return null;
+  const highScore = Math.max(...contenders.map(entry => entry.record.highScore));
+  return {
+    highScore,
+    players: contenders.filter(entry => entry.record.highScore === highScore).map(entry => entry.player)
+  };
+}
+
+function renderGameLeaderboards() {
+  const root = document.getElementById('gameLeaderboards');
+  root.innerHTML = '';
+
+  Object.entries(GAME_DEFINITIONS).forEach(([gameType, definition]) => {
+    const card = document.createElement('article');
+    card.className = `leaderboard-card ${gameType}`;
+    card.innerHTML = `
+      <div class="leaderboard-card-title">
+        <span class="leaderboard-symbol" aria-hidden="true">${definition.symbol}</span>
+        <strong>${definition.label}</strong>
+      </div>
+      <div class="leaderboard-levels"></div>
+    `;
+
+    const levels = card.querySelector('.leaderboard-levels');
+    definition.levels.forEach(level => {
+      const result = leaderboardResult(gameType, level);
+      const row = document.createElement('div');
+      row.className = 'leaderboard-entry';
+      if (!result) {
+        row.innerHTML = `
+          <span class="leaderboard-level">${LEVEL_DEFINITIONS[level].label}</span>
+          <span class="leaderboard-player empty">還沒有紀錄</span>
+          <strong class="leaderboard-score">—</strong>
+        `;
+      } else {
+        const names = result.players.map(player => escapeHtml(player.name)).join('、');
+        row.innerHTML = `
+          <span class="leaderboard-level">${LEVEL_DEFINITIONS[level].label}</span>
+          <span class="leaderboard-player" title="${names}">👑 ${names}</span>
+          <strong class="leaderboard-score">${result.highScore} 分</strong>
+        `;
+      }
+      levels.appendChild(row);
+    });
+
+    root.appendChild(card);
+  });
+}
+
 function selectGame(gameType) {
   if (!GAME_DEFINITIONS[gameType]) return;
   state.settings.gameType = gameType;
@@ -301,6 +356,7 @@ function renderSettings() {
   const player = currentPlayer();
   document.getElementById('settingsTitle').textContent = `${definition.label}設定`;
   document.getElementById('levelSetting').classList.toggle('hidden', gameType === 'multiplication');
+  document.getElementById('multiplicationTableSetting').classList.toggle('hidden', gameType !== 'multiplication');
 
   document.querySelectorAll('[data-level]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.level === state.settings.level);
@@ -312,6 +368,40 @@ function renderSettings() {
   const title = document.getElementById('scoreboardTitle');
   title.textContent = player ? `${player.name}・${definition.label}` : definition.label;
   renderScoreboardRows(player, gameType);
+}
+
+function renderMultiplicationTable() {
+  const root = document.getElementById('multiplicationTableGrid');
+  root.innerHTML = '';
+
+  for (let base = 2; base <= 9; base += 1) {
+    const column = document.createElement('section');
+    column.className = 'multiplication-table-column';
+    column.setAttribute('aria-label', `${base} 的乘法`);
+    const heading = document.createElement('strong');
+    heading.textContent = `${base} 的乘法`;
+    column.appendChild(heading);
+
+    for (let multiplier = 2; multiplier <= 9; multiplier += 1) {
+      const equation = document.createElement('span');
+      equation.textContent = `${base} × ${multiplier} = ${base * multiplier}`;
+      column.appendChild(equation);
+    }
+    root.appendChild(column);
+  }
+}
+
+function openMultiplicationTable() {
+  const dialog = document.getElementById('multiplicationTableDialog');
+  renderMultiplicationTable();
+  if (!dialog.open) dialog.showModal();
+  requestAnimationFrame(() => focusFirst(dialog));
+}
+
+function closeMultiplicationTable() {
+  const dialog = document.getElementById('multiplicationTableDialog');
+  if (dialog.open) dialog.close();
+  requestAnimationFrame(() => focusWithoutScroll(document.querySelector('[data-action="open-multiplication-table"]')));
 }
 
 function renderScoreboardRows(player, gameType) {
@@ -335,6 +425,7 @@ function renderScoreboardRows(player, gameType) {
 }
 
 function showScreen(name) {
+  if (name === 'games') renderGameLeaderboards();
   Object.values(screens).forEach(el => el.classList.remove('active'));
   screens[name].classList.add('active');
   requestAnimationFrame(() => focusFirst(screens[name]));
@@ -843,7 +934,10 @@ function handleBackAction() {
 
   const exitDialog = document.getElementById('exitDialog');
   const playerDialog = document.getElementById('playerDialog');
-  if (exitDialog.open) {
+  const multiplicationTableDialog = document.getElementById('multiplicationTableDialog');
+  if (multiplicationTableDialog.open) {
+    closeMultiplicationTable();
+  } else if (exitDialog.open) {
     closeExitConfirmation();
   } else if (playerDialog.open) {
     playerDialog.close();
@@ -967,6 +1061,8 @@ document.addEventListener('click', event => {
   }
   if (action === 'back-players') showScreen('players');
   if (action === 'back-games') showScreen('games');
+  if (action === 'open-multiplication-table') openMultiplicationTable();
+  if (action === 'close-multiplication-table') closeMultiplicationTable();
   if (action === 'start-game') startGame();
   if (action === 'exit-game') openExitConfirmation();
   if (action === 'continue-game') closeExitConfirmation();
@@ -1005,6 +1101,11 @@ document.getElementById('playerForm').addEventListener('submit', event => {
 document.getElementById('exitDialog').addEventListener('cancel', event => {
   event.preventDefault();
   closeExitConfirmation();
+});
+
+document.getElementById('multiplicationTableDialog').addEventListener('cancel', event => {
+  event.preventDefault();
+  closeMultiplicationTable();
 });
 
 document.getElementById('exitDialog').addEventListener('close', () => {

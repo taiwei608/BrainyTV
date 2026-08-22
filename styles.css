@@ -65,7 +65,7 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 #modeOptions { grid-template-columns: repeat(2, 1fr); }
 
 .games-section { margin-top: 32px; }
-#gamesScreen .games-section { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: center; }
+#gamesScreen .games-section { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: space-between; gap: clamp(12px,2vh,22px); }
 .game-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
 .game-card { min-height: 160px; padding: 24px; display: flex; align-items: center; gap: 20px; text-align: left; }
 .game-card.featured { border-color: rgba(103,232,249,.45); background: linear-gradient(135deg,#0369a1,#1d4ed8 48%,#6d28d9); box-shadow: 0 18px 42px rgba(37,99,235,.3), inset 0 1px 0 rgba(255,255,255,.22); }
@@ -75,6 +75,25 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .game-icon { min-width: 68px; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 20px; background: rgba(255,255,255,.1); font-size: clamp(42px,4vw,70px); text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
 .game-copy strong { display: block; font-size: clamp(24px,2.2vw,36px); }
 .game-copy small { color: var(--text-soft); font-size: clamp(16px,1.3vw,22px); }
+
+.leaderboard-overview { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 12px; padding-top: clamp(12px,2vh,22px); border-top: 1px solid rgba(148,163,184,.2); }
+.leaderboard-overview-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
+.leaderboard-overview-heading h2 { margin: 0; font-size: clamp(23px,2vw,34px); }
+.leaderboard-overview-heading span { color: var(--text-soft); font-size: clamp(15px,1.2vw,20px); }
+.leaderboard-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; min-height: 0; }
+.leaderboard-card { min-width: 0; overflow: hidden; padding: clamp(12px,1.5vw,20px); border: 1px solid rgba(148,163,184,.2); border-radius: 20px; background: linear-gradient(145deg,rgba(30,41,59,.9),rgba(15,23,42,.82)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+.leaderboard-card.multiplication { border-color: rgba(103,232,249,.35); }
+.leaderboard-card.addition { border-color: rgba(74,222,128,.32); }
+.leaderboard-card.subtraction { border-color: rgba(251,191,36,.34); }
+.leaderboard-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #fff; }
+.leaderboard-card-title strong { overflow: hidden; font-size: clamp(19px,1.5vw,26px); text-overflow: ellipsis; white-space: nowrap; }
+.leaderboard-symbol { width: 34px; aspect-ratio: 1; display: grid; flex: 0 0 auto; place-items: center; border-radius: 10px; background: rgba(255,255,255,.1); color: #e0f2fe; font-size: 22px; font-weight: 950; }
+.leaderboard-levels { display: grid; gap: 7px; }
+.leaderboard-entry { display: grid; grid-template-columns: minmax(68px,.72fr) minmax(0,1.35fr) auto; gap: 8px; align-items: center; min-height: 32px; padding: 7px 9px; border-radius: 11px; background: rgba(2,6,23,.3); font-size: clamp(14px,1vw,18px); }
+.leaderboard-level { color: var(--text-soft); font-weight: 800; }
+.leaderboard-player { overflow: hidden; color: #fff; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.leaderboard-player.empty { color: #64748b; font-weight: 700; }
+.leaderboard-score { color: #fde68a; white-space: nowrap; }
 
 #gameScreen.active { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: clamp(5px, 1.2vh, 12px); }
 .game-hud { border: 1px solid var(--panel-border); background: linear-gradient(90deg,rgba(15,23,42,.88),rgba(30,41,59,.78)); border-radius: 20px; padding: clamp(8px,1.5vh,16px) clamp(16px,2vw,26px); box-shadow: 0 14px 36px rgba(2,6,23,.28), inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter: blur(12px); }
@@ -141,12 +160,24 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .exit-confirmation .dialog-actions { justify-content: center; }
 .confirmation-panel { padding: 24px; border-radius: 18px; background: rgba(127,29,29,.28); }
 .confirmation-text { margin-bottom: 6px; font-size: 26px; font-weight: 800; }
+.multiplication-table-dialog-card { width: min(1380px,94vw); max-height: 94vh; overflow: hidden; }
+.multiplication-table-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+.multiplication-table-header .eyebrow { margin-bottom: 3px; }
+.multiplication-table-header h2 { margin: 0; }
+.multiplication-table-header > p { margin: 0; color: var(--text-soft); font-size: clamp(17px,1.4vw,23px); font-weight: 800; }
+.multiplication-table-grid { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 10px; }
+.multiplication-table-column { min-width: 0; overflow: hidden; border: 1px solid rgba(103,232,249,.2); border-radius: 16px; background: rgba(2,6,23,.38); }
+.multiplication-table-column strong { display: block; padding: 10px 6px; background: linear-gradient(135deg,rgba(14,116,144,.7),rgba(79,70,229,.55)); color: #fff; text-align: center; font-size: clamp(16px,1.2vw,21px); }
+.multiplication-table-column span { display: block; padding: 6px 4px; color: #e0f2fe; text-align: center; font-size: clamp(14px,1vw,18px); font-weight: 800; white-space: nowrap; }
+.multiplication-table-column span:nth-child(odd) { background: rgba(148,163,184,.07); }
+.multiplication-table-actions { justify-content: center; margin-top: 20px; }
 .settings-panel { width: min(1280px, 100%); margin: clamp(18px,4vh,48px) auto 0; }
 .settings-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(360px,.9fr); gap: clamp(18px,3vw,38px); align-items: stretch; }
 .settings-controls { min-width: 0; }
 .fixed-duration { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; margin-bottom: 28px; border-radius: 20px; background: rgba(37,99,235,.22); color: var(--text-soft); font-size: 24px; }
 .fixed-duration strong { color: #fff; font-size: 38px; }
 .settings-actions { justify-content: space-between; margin-top: 34px; }
+.multiplication-table-setting .btn { width: 100%; border-color: rgba(103,232,249,.3); background: linear-gradient(145deg,rgba(14,116,144,.55),rgba(37,99,235,.45)); text-align: left; }
 .scoreboard { min-width: 0; padding: 22px; border: 1px solid rgba(103,232,249,.22); border-radius: 22px; background: linear-gradient(145deg,rgba(8,47,73,.38),rgba(30,41,59,.54)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
 .scoreboard-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; color: var(--text-soft); font-size: 17px; }
 .scoreboard-heading strong { color: #e0f2fe; font-size: clamp(19px,1.6vw,25px); }
@@ -172,15 +203,19 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
 }
 
 @media (max-width: 900px) {
-  .home-grid, .game-cards { grid-template-columns: 1fr 1fr; }
+  .home-grid { grid-template-columns: 1fr 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+  .game-card { flex-direction: column; justify-content: center; text-align: center; }
+  .game-icon { min-width: 52px; width: 52px; }
+  .leaderboard-entry { grid-template-columns: 1fr; gap: 2px; text-align: center; }
+  .multiplication-table-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
 }
 
 @media (max-width: 720px) {
   .settings-layout { grid-template-columns: 1fr; }
 }
 
-@media (max-height: 700px) {
+@media (max-height: 800px) {
   .app-shell { padding: 10px 24px; }
   .topbar { flex: 0 0 auto; }
   .eyebrow { margin-bottom: 2px; font-size: 15px; }
@@ -197,12 +232,30 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .game-cards { gap: 10px; }
   .game-card { min-height: 90px; padding: 12px; }
   .game-icon { min-width: 45px; font-size: 38px; }
+  .leaderboard-overview { gap: 7px; padding-top: 8px; }
+  .leaderboard-overview-heading h2 { font-size: 21px; }
+  .leaderboard-overview-heading span { font-size: 14px; }
+  .leaderboard-grid { gap: 8px; }
+  .leaderboard-card { padding: 9px; border-radius: 14px; }
+  .leaderboard-card-title { margin-bottom: 5px; }
+  .leaderboard-card-title strong { font-size: 17px; }
+  .leaderboard-symbol { width: 27px; border-radius: 8px; font-size: 17px; }
+  .leaderboard-levels { gap: 4px; }
+  .leaderboard-entry { min-height: 25px; padding: 4px 6px; font-size: 13px; }
   .settings-panel { margin: auto; }
   .settings-layout { gap: 12px; }
   .fixed-duration { padding: 10px 16px; margin-bottom: 14px; font-size: 18px; }
   .fixed-duration strong { font-size: 28px; }
   .option { padding: 12px; font-size: 20px; }
   .settings-actions { margin-top: 18px; }
+  .multiplication-table-setting .setting-label { margin-bottom: 6px; }
+  .multiplication-table-dialog-card { padding: 18px; }
+  .multiplication-table-header { margin-bottom: 10px; }
+  .multiplication-table-grid { gap: 6px; }
+  .multiplication-table-column { border-radius: 11px; }
+  .multiplication-table-column strong { padding: 6px 3px; font-size: 15px; }
+  .multiplication-table-column span { padding: 3px 2px; font-size: 14px; }
+  .multiplication-table-actions { margin-top: 10px; }
   .scoreboard { padding: 12px; }
   .scoreboard-heading { margin-bottom: 7px; font-size: 15px; }
   .scoreboard-heading strong { font-size: 18px; }

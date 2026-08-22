@@ -47,9 +47,14 @@
           </button>
           <button class="game-card addition-card" data-game="addition"><span class="game-icon">＋</span><span class="game-copy"><strong>加法挑戰</strong><small>個位・十位・百位</small></span></button>
           <button class="game-card subtraction-card" data-game="subtraction"><span class="game-icon">−</span><span class="game-copy"><strong>減法挑戰</strong><small>個位・十位・百位</small></span></button>
-          <button class="game-card disabled" disabled><span class="game-icon">A</span><span class="game-copy"><strong>英文單字</strong><small>敬請期待</small></span></button>
-          <button class="game-card disabled" disabled><span class="game-icon">字</span><span class="game-copy"><strong>國字練習</strong><small>敬請期待</small></span></button>
         </div>
+        <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
+          <div class="leaderboard-overview-heading">
+            <h2 id="leaderboardTitle">🏆 全遊戲排行榜</h2>
+            <span>最高分玩家・同分並列</span>
+          </div>
+          <div id="gameLeaderboards" class="leaderboard-grid"></div>
+        </section>
         <div class="inline-actions"><button class="btn secondary" data-action="back-players">返回選玩家</button></div>
       </section>
     </section>
@@ -77,6 +82,10 @@
                 <button class="option selected" data-mode="choice">四選一</button>
                 <button class="option" data-mode="keypad">數字輸入</button>
               </div>
+            </div>
+            <div id="multiplicationTableSetting" class="setting-block multiplication-table-setting">
+              <span class="setting-label">學習小幫手</span>
+              <button class="btn secondary" data-action="open-multiplication-table">▦ 查看完整九九乘法表</button>
             </div>
             <div class="inline-actions settings-actions">
               <button class="btn secondary" data-action="back-games">返回選遊戲</button>
@@ -173,6 +182,22 @@
       <div class="dialog-actions">
         <button class="btn primary" data-action="continue-game">繼續玩</button>
         <button class="btn danger" data-action="confirm-exit">離開遊戲</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="multiplicationTableDialog" class="dialog">
+    <div class="dialog-card multiplication-table-dialog-card">
+      <div class="multiplication-table-header">
+        <div>
+          <p class="eyebrow">學習小幫手</p>
+          <h2>九九乘法表</h2>
+        </div>
+        <p>從 2 到 9，一次看完！</p>
+      </div>
+      <div id="multiplicationTableGrid" class="multiplication-table-grid" aria-label="二到九的九九乘法表"></div>
+      <div class="dialog-actions multiplication-table-actions">
+        <button class="btn primary" data-action="close-multiplication-table">看完了，回到設定</button>
       </div>
     </div>
   </dialog>
