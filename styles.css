@@ -62,15 +62,15 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .option { padding: 20px 14px; font-size: clamp(20px,1.8vw,29px); }
 .option.selected { border-color: #60a5fa; background: linear-gradient(135deg,#2563eb,#6d28d9); box-shadow: 0 10px 26px rgba(79,70,229,.3); }
-#modeOptions { grid-template-columns: repeat(2, 1fr); }
 
 .games-section { margin-top: 32px; }
 #gamesScreen .games-section { display: flex; flex: 1; min-height: 0; flex-direction: column; justify-content: space-between; gap: clamp(12px,2vh,22px); }
-.game-cards { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 18px; }
+.game-cards { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; }
 .game-card { min-height: 160px; padding: 24px; display: flex; align-items: center; gap: 20px; text-align: left; }
 .game-card.featured { border-color: rgba(103,232,249,.45); background: linear-gradient(135deg,#0369a1,#1d4ed8 48%,#6d28d9); box-shadow: 0 18px 42px rgba(37,99,235,.3), inset 0 1px 0 rgba(255,255,255,.22); }
 .game-card.addition-card { border-color: rgba(74,222,128,.4); background: linear-gradient(135deg,#047857,#059669 52%,#0891b2); box-shadow: 0 18px 42px rgba(5,150,105,.25), inset 0 1px 0 rgba(255,255,255,.2); }
 .game-card.subtraction-card { border-color: rgba(251,191,36,.4); background: linear-gradient(135deg,#b45309,#d97706 50%,#be123c); box-shadow: 0 18px 42px rgba(217,119,6,.24), inset 0 1px 0 rgba(255,255,255,.2); }
+.game-card.division-card { border-color: rgba(244,114,182,.4); background: linear-gradient(135deg,#9d174d,#be185d 50%,#7e22ce); box-shadow: 0 18px 42px rgba(190,24,93,.24), inset 0 1px 0 rgba(255,255,255,.2); }
 .game-card.disabled { opacity: .42; cursor: default; }
 .game-icon { min-width: 68px; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.2); border-radius: 20px; background: rgba(255,255,255,.1); font-size: clamp(42px,4vw,70px); text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
 .game-copy strong { display: block; font-size: clamp(24px,2.2vw,36px); }
@@ -80,11 +80,12 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .leaderboard-overview-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
 .leaderboard-overview-heading h2 { margin: 0; font-size: clamp(23px,2vw,34px); }
 .leaderboard-overview-heading span { color: var(--text-soft); font-size: clamp(15px,1.2vw,20px); }
-.leaderboard-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; min-height: 0; }
+.leaderboard-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; min-height: 0; }
 .leaderboard-card { min-width: 0; overflow: hidden; padding: clamp(12px,1.5vw,20px); border: 1px solid rgba(148,163,184,.2); border-radius: 20px; background: linear-gradient(145deg,rgba(30,41,59,.9),rgba(15,23,42,.82)); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
 .leaderboard-card.multiplication { border-color: rgba(103,232,249,.35); }
 .leaderboard-card.addition { border-color: rgba(74,222,128,.32); }
 .leaderboard-card.subtraction { border-color: rgba(251,191,36,.34); }
+.leaderboard-card.division { border-color: rgba(244,114,182,.34); }
 .leaderboard-card-title { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #fff; }
 .leaderboard-card-title strong { overflow: hidden; font-size: clamp(19px,1.5vw,26px); text-overflow: ellipsis; white-space: nowrap; }
 .leaderboard-symbol { width: 34px; aspect-ratio: 1; display: grid; flex: 0 0 auto; place-items: center; border-radius: 10px; background: rgba(255,255,255,.1); color: #e0f2fe; font-size: 22px; font-weight: 950; }
@@ -133,10 +134,6 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .game-footer { min-height: clamp(30px,5vh,48px); display: grid; place-items: center; }
 .remote-hint { text-align: center; margin: 0; color: #94a3b8; font-size: clamp(14px,2.5vh,18px); line-height: 1; }
 
-.keypad-wrap { width: min(760px,100%); height: 100%; min-height: 0; margin: 0 auto; display: flex; flex-direction: column; }
-.keypad-display { min-height: clamp(42px,8vh,72px); display: grid; place-items: center; margin-bottom: clamp(6px,1vh,12px); border: 1px solid var(--panel-border); background: rgba(15,23,42,.76); border-radius: 14px; box-shadow: inset 0 2px 12px rgba(2,6,23,.35); font-size: clamp(34px,7vh,52px); font-weight: 900; }
-.keypad-grid { display: grid; flex: 1; min-height: 0; grid-template-columns: repeat(5,1fr); grid-template-rows: repeat(3,minmax(0,1fr)); gap: clamp(7px,1.2vh,12px); }
-.key-btn { min-height: 0; font-size: clamp(24px,5vh,36px); }
 .hidden { display: none !important; }
 
 .result-screen { text-align: center; padding-top: 2vh; }

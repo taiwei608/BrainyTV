@@ -5,7 +5,8 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 const GAME_DEFINITIONS = {
   multiplication: { label: '九九乘法', symbol: '×', levels: ['all'] },
   addition: { label: '加法挑戰', symbol: '+', levels: ['ones', 'tens', 'hundreds'] },
-  subtraction: { label: '減法挑戰', symbol: '−', levels: ['ones', 'tens', 'hundreds'] }
+  subtraction: { label: '減法挑戰', symbol: '−', levels: ['ones', 'tens', 'hundreds'] },
+  division: { label: '除法挑戰', symbol: '÷', levels: ['ones', 'tens', 'hundreds'] }
 };
 
 const LEVEL_DEFINITIONS = {
@@ -18,7 +19,7 @@ const LEVEL_DEFINITIONS = {
 const defaultState = {
   players: [],
   currentPlayerId: null,
-  settings: { duration: 60, mode: 'choice', gameType: 'multiplication', level: 'ones' }
+  settings: { duration: 60, gameType: 'multiplication', level: 'ones' }
 };
 
 let state = loadState();
@@ -209,7 +210,8 @@ function createProgressMap() {
   return {
     multiplication: { all: emptyRecord() },
     addition: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() },
-    subtraction: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() }
+    subtraction: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() },
+    division: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() }
   };
 }
 
@@ -309,9 +311,6 @@ function renderHome() {
   document.querySelectorAll('.selected-player-badge').forEach(el => {
     el.textContent = player ? `玩家：${player.name}` : '尚未選擇玩家';
   });
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.mode === state.settings.mode);
-  });
 }
 
 function leaderboardResult(gameType, level) {
@@ -390,9 +389,6 @@ function renderSettings() {
 
   document.querySelectorAll('[data-level]').forEach(btn => {
     btn.classList.toggle('selected', btn.dataset.level === state.settings.level);
-  });
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.classList.toggle('selected', btn.dataset.mode === state.settings.mode);
   });
 
   const title = document.getElementById('scoreboardTitle');
@@ -540,7 +536,6 @@ function startGame() {
     paused: false,
     finishAfterFeedback: false,
     answerUnlockAt: 0,
-    input: '',
     current: null
   };
 
@@ -563,7 +558,6 @@ function nextQuestion() {
   game.answered = false;
   game.finishAfterFeedback = false;
   game.answerUnlockAt = Date.now() + 300;
-  game.input = '';
   game.questionNumber += 1;
   game.current = generateQuestion(playerRecord(currentPlayer(), game.gameType, game.level), game.gameType, game.level);
 
@@ -575,8 +569,7 @@ function nextQuestion() {
   screens.game.classList.remove('wrong-feedback');
   document.querySelector('.countdown').classList.remove('time-penalty');
 
-  if (state.settings.mode === 'choice') renderChoices();
-  else renderKeypad();
+  renderChoices();
 }
 
 function generateQuestion(record, gameType, level) {
@@ -611,7 +604,10 @@ function generateArithmeticQuestion(record, gameType, level) {
     .slice(0, 12)
     .forEach(([key, stats]) => {
       const parsed = parseArithmeticKey(key, gameType);
-      if (parsed && parsed.a >= min && parsed.a <= max && parsed.b >= min && parsed.b <= max) {
+      const inLevel = gameType === 'division'
+        ? parsed && parsed.a / parsed.b >= min && parsed.a / parsed.b <= max
+        : parsed && parsed.a >= min && parsed.a <= max && parsed.b >= min && parsed.b <= max;
+      if (inLevel) {
         candidates.set(key, { ...parsed, key, weight: questionWeight(stats) + 2 });
       }
     });
@@ -619,8 +615,14 @@ function generateArithmeticQuestion(record, gameType, level) {
   while (candidates.size < 42) {
     let a = randomInteger(min, max);
     let b = randomInteger(min, max);
-    if (gameType === 'subtraction' && b > a) [a, b] = [b, a];
-    const operator = gameType === 'addition' ? '+' : '−';
+    if (gameType === 'division') {
+      const quotient = a;
+      b = randomInteger(2, 9);
+      a = quotient * b;
+    } else if (gameType === 'subtraction' && b > a) {
+      [a, b] = [b, a];
+    }
+    const operator = gameType === 'addition' ? '+' : gameType === 'division' ? '÷' : '−';
     const key = `${a}${operator}${b}`;
     const stats = record.questionStats[key] || { correct: 0, wrong: 0 };
     candidates.set(key, { a, b, operator, key, weight: questionWeight(stats) });
@@ -642,14 +644,16 @@ function questionWeight(stats) {
 }
 
 function parseArithmeticKey(key, gameType) {
-  const separator = gameType === 'addition' ? '+' : '−';
+  const separator = gameType === 'addition' ? '+' : gameType === 'division' ? '÷' : '−';
   const parts = key.split(separator).map(Number);
   if (parts.length !== 2 || parts.some(value => !Number.isFinite(value))) return null;
   return { a: parts[0], b: parts[1], operator: separator };
 }
 
 function calculateAnswer(question, gameType) {
-  return gameType === 'addition' ? question.a + question.b : question.a - question.b;
+  if (gameType === 'addition') return question.a + question.b;
+  if (gameType === 'division') return question.a / question.b;
+  return question.a - question.b;
 }
 
 function randomInteger(min, max) {
@@ -658,7 +662,6 @@ function randomInteger(min, max) {
 
 function renderChoices() {
   document.getElementById('choiceArea').classList.remove('hidden');
-  document.getElementById('keypadArea').classList.add('hidden');
   const area = document.getElementById('choiceArea');
   area.innerHTML = '';
   makeChoiceOptions(game.current).forEach(value => {
@@ -684,44 +687,6 @@ function makeChoiceOptions(question) {
     if (candidate >= 0) values.add(candidate);
   }
   return shuffle([...values]);
-}
-
-function renderKeypad() {
-  document.getElementById('choiceArea').classList.add('hidden');
-  document.getElementById('keypadArea').classList.remove('hidden');
-  const grid = document.getElementById('keypadGrid');
-  grid.innerHTML = '';
-  [...Array(10).keys()].forEach(num => {
-    const btn = document.createElement('button');
-    btn.className = 'key-btn';
-    btn.textContent = num;
-    btn.addEventListener('click', () => appendDigit(num));
-    grid.appendChild(btn);
-  });
-  const erase = document.createElement('button');
-  erase.className = 'key-btn'; erase.textContent = '⌫'; erase.addEventListener('click', eraseDigit);
-  const ok = document.createElement('button');
-  ok.className = 'key-btn'; ok.textContent = '確認'; ok.addEventListener('click', () => {
-    if (game.input) submitAnswer(Number(game.input), ok);
-  });
-  grid.append(erase, ok);
-  updateKeypadDisplay();
-  requestAnimationFrame(() => focusFirst(grid));
-}
-
-function appendDigit(num) {
-  const maxLength = Math.max(1, String(game.current.answer).length);
-  if (game.answered || game.input.length >= maxLength) return;
-  game.input += String(num);
-  updateKeypadDisplay();
-}
-function eraseDigit() {
-  if (game.answered) return;
-  game.input = game.input.slice(0,-1);
-  updateKeypadDisplay();
-}
-function updateKeypadDisplay() {
-  document.getElementById('keypadDisplay').textContent = game.input || '_';
 }
 
 function submitAnswer(value, sourceButton) {
@@ -765,13 +730,11 @@ function submitAnswer(value, sourceButton) {
     }, 1600);
   }
 
-  if (state.settings.mode === 'choice') {
-    document.querySelectorAll('.answer-btn').forEach(btn => {
-      const v = Number(btn.dataset.answerValue);
-      if (v === game.current.answer) btn.classList.add('correct');
-      else if (btn === sourceButton) btn.classList.add('wrong');
-    });
-  }
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    const v = Number(btn.dataset.answerValue);
+    if (v === game.current.answer) btn.classList.add('correct');
+    else if (btn === sourceButton) btn.classList.add('wrong');
+  });
 
   document.getElementById('remoteHint').textContent = '按 OK 進入下一題';
 
@@ -852,12 +815,7 @@ function closeExitConfirmation() {
   const dialog = document.getElementById('exitDialog');
   if (dialog.open) dialog.close();
   if (game) game.paused = false;
-  requestAnimationFrame(() => {
-    const area = state.settings.mode === 'choice'
-      ? document.getElementById('choiceArea')
-      : document.getElementById('keypadGrid');
-    focusFirst(area);
-  });
+  requestAnimationFrame(() => focusFirst(document.getElementById('choiceArea')));
 }
 
 function renderManagePlayers() {
@@ -1176,12 +1134,6 @@ document.addEventListener('click', event => {
   if (action === 'play-again') startGame();
   if (action === 'back-home') { game = null; renderHome(); showScreen('players'); }
 
-  const mode = event.target.closest('[data-mode]')?.dataset.mode;
-  if (mode) {
-    state.settings.mode = mode;
-    saveState();
-    renderSettings();
-  }
   const level = event.target.closest('[data-level]')?.dataset.level;
   if (level) {
     state.settings.level = level;

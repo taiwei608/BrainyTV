@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
   <title>Brainy Arena</title>
-  <link rel="stylesheet" href="styles.css?v=20260823-exit-focus" />
+  <link rel="stylesheet" href="styles.css?v=20260823-division-choice" />
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -47,6 +47,7 @@
           </button>
           <button class="game-card addition-card" data-game="addition"><span class="game-icon">＋</span><span class="game-copy"><strong>加法挑戰</strong><small>個位・十位・百位</small></span></button>
           <button class="game-card subtraction-card" data-game="subtraction"><span class="game-icon">−</span><span class="game-copy"><strong>減法挑戰</strong><small>個位・十位・百位</small></span></button>
+          <button class="game-card division-card" data-game="division"><span class="game-icon">÷</span><span class="game-copy"><strong>除法挑戰</strong><small>整除題・沒有餘數</small></span></button>
         </div>
         <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
           <div class="leaderboard-overview-heading">
@@ -74,13 +75,6 @@
                 <button class="option selected" data-level="ones">個位數</button>
                 <button class="option" data-level="tens">十位數</button>
                 <button class="option" data-level="hundreds">百位數</button>
-              </div>
-            </div>
-            <div class="setting-block">
-              <span class="setting-label">答題模式</span>
-              <div class="segmented focus-grid" id="modeOptions">
-                <button class="option selected" data-mode="choice">四選一</button>
-                <button class="option" data-mode="keypad">數字輸入</button>
               </div>
             </div>
             <div id="multiplicationTableSetting" class="setting-block multiplication-table-setting">
@@ -143,10 +137,6 @@
       </div>
 
       <div id="choiceArea" class="answers-grid focus-grid"></div>
-      <div id="keypadArea" class="keypad-wrap hidden">
-        <div id="keypadDisplay" class="keypad-display">_</div>
-        <div id="keypadGrid" class="keypad-grid focus-grid"></div>
-      </div>
 
       <div class="game-footer">
         <p id="remoteHint" class="remote-hint">方向鍵選擇答案・OK 確認</p>
@@ -210,6 +200,6 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260823-exit-focus"></script>
+  <script src="app.js?v=20260823-division-choice"></script>
 </body>
 </html>
