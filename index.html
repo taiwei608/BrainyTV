@@ -98,6 +98,13 @@
               <strong id="scoreboardTitle">—</strong>
             </div>
             <div id="scoreboardRows" class="scoreboard-rows"></div>
+            <section class="history-panel" aria-labelledby="historyTitle">
+              <div class="history-heading">
+                <strong id="historyTitle">近 14 天每日最高分</strong>
+                <span id="historySummary"></span>
+              </div>
+              <div id="scoreHistory" class="score-history"></div>
+            </section>
           </aside>
         </div>
       </section>
@@ -150,6 +157,7 @@
       <p class="eyebrow">本輪完成</p>
       <h2 id="resultTitle">做得很好！</h2>
       <div class="result-score"><span id="finalScore">0</span><small>分</small></div>
+      <p id="resultTrend" class="result-trend" aria-live="polite"></p>
       <div class="stats-grid">
         <div><span>答對</span><strong id="correctCount">0</strong></div>
         <div><span>答錯</span><strong id="wrongCount">0</strong></div>

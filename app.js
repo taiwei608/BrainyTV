@@ -173,7 +173,36 @@ function playAnswerSound(correct) {
 }
 
 function emptyRecord() {
-  return { highScore: 0, lastScore: null, plays: 0, questionStats: {} };
+  return { highScore: 0, lastScore: null, plays: 0, questionStats: {}, dailyHighScores: {} };
+}
+
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function relativeDateKey(daysAgo) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() - daysAgo);
+  return localDateKey(date);
+}
+
+function dailyScore(record, daysAgo = 0) {
+  const score = record.dailyHighScores?.[relativeDateKey(daysAgo)];
+  return Number.isFinite(Number(score)) ? Number(score) : null;
+}
+
+function updateDailyHighScore(record, score) {
+  if (!record.dailyHighScores || typeof record.dailyHighScores !== 'object') record.dailyHighScores = {};
+  const today = relativeDateKey(0);
+  record.dailyHighScores[today] = Math.max(Number(record.dailyHighScores[today]) || 0, score);
+  const cutoff = relativeDateKey(120);
+  Object.keys(record.dailyHighScores).forEach(date => {
+    if (date < cutoff) delete record.dailyHighScores[date];
+  });
 }
 
 function createProgressMap() {
@@ -208,6 +237,7 @@ function ensurePlayerProgress(player) {
       record.lastScore = record.lastScore == null ? null : Number(record.lastScore) || 0;
       record.plays = Number(record.plays) || 0;
       if (!record.questionStats || typeof record.questionStats !== 'object') record.questionStats = {};
+      if (!record.dailyHighScores || typeof record.dailyHighScores !== 'object') record.dailyHighScores = {};
     });
   });
 
@@ -368,6 +398,7 @@ function renderSettings() {
   const title = document.getElementById('scoreboardTitle');
   title.textContent = player ? `${player.name}・${definition.label}` : definition.label;
   renderScoreboardRows(player, gameType);
+  renderScoreHistory(player, gameType);
 }
 
 function renderMultiplicationTable() {
@@ -414,13 +445,70 @@ function renderScoreboardRows(player, gameType) {
     const row = document.createElement('div');
     row.className = 'scoreboard-row' + (level === selectedLevel(gameType) ? ' selected' : '');
     const lastScore = record.lastScore == null ? '—' : `${record.lastScore} 分`;
+    const today = dailyScore(record, 0);
+    const yesterday = dailyScore(record, 1);
+    let trend = '— 尚無比較';
+    let trendClass = 'neutral';
+    if (today != null && yesterday != null) {
+      const change = today - yesterday;
+      trend = change > 0 ? `↑ 進步 ${change} 分` : change < 0 ? `↓ 再加油 ${Math.abs(change)} 分` : '→ 和昨天一樣';
+      trendClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+    } else if (today != null) {
+      trend = '★ 今天的新起點';
+      trendClass = 'up';
+    }
     row.innerHTML = `
       <strong>${LEVEL_DEFINITIONS[level].label}</strong>
-      <span>最高 <b>${record.highScore} 分</b></span>
-      <span>最近 <b>${lastScore}</b></span>
-      <span>玩過 <b>${record.plays} 次</b></span>
+      <span>今天 <b>${today == null ? '—' : `${today} 分`}</b></span>
+      <span>昨天 <b>${yesterday == null ? '—' : `${yesterday} 分`}</b></span>
+      <span class="score-trend ${trendClass}">${trend}</span>
+      <span class="score-details">歷史最高 ${record.highScore} 分 · 最近 ${lastScore} · ${record.plays} 次</span>
     `;
     root.appendChild(row);
+  });
+}
+
+function renderScoreHistory(player, gameType) {
+  const root = document.getElementById('scoreHistory');
+  const summary = document.getElementById('historySummary');
+  root.innerHTML = '';
+  summary.textContent = '';
+  if (!player) return;
+
+  const level = selectedLevel(gameType);
+  const record = playerRecord(player, gameType, level);
+  const entries = Object.entries(record.dailyHighScores || {})
+    .filter(([date, score]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Number(score)))
+    .sort(([a], [b]) => a.localeCompare(b));
+  const recent = entries.slice(-14);
+
+  document.getElementById('historyTitle').textContent = `${LEVEL_DEFINITIONS[level].label}・最近 14 次紀錄`;
+  summary.textContent = entries.length ? `共保存 ${entries.length} 天` : '完成一局後開始累積';
+
+  if (!recent.length) {
+    const empty = document.createElement('p');
+    empty.className = 'history-empty';
+    empty.textContent = '還沒有每日紀錄，今天就來創下第一筆吧！';
+    root.appendChild(empty);
+    return;
+  }
+
+  const maxScore = Math.max(10, ...recent.map(([, score]) => Number(score)));
+  recent.forEach(([date, score], index) => {
+    const value = Number(score);
+    const previous = index ? Number(recent[index - 1][1]) : null;
+    const item = document.createElement('div');
+    item.className = 'history-day';
+    const [, month, day] = date.split('-');
+    const change = previous == null ? '' : value > previous ? `+${value - previous}` : value < previous ? `${value - previous}` : '—';
+    const changeClass = previous == null ? '' : value > previous ? 'up' : value < previous ? 'down' : '';
+    item.innerHTML = `
+      <span class="history-score">${value}</span>
+      <span class="history-bar-wrap"><i class="history-bar" style="height:${Math.max(8, Math.round(value / maxScore * 100))}%"></i></span>
+      <span class="history-date">${Number(month)}/${Number(day)}</span>
+      <small class="history-change ${changeClass}">${change}</small>
+    `;
+    root.appendChild(item);
   });
 }
 
@@ -714,6 +802,7 @@ function finishGame() {
   record.lastScore = game.score;
   record.highScore = Math.max(record.highScore || 0, game.score);
   record.plays = (record.plays || 0) + 1;
+  updateDailyHighScore(record, game.score);
   saveState();
 
   const total = game.correct + game.wrong;
@@ -725,6 +814,21 @@ function finishGame() {
   document.getElementById('accuracyText').textContent = `${accuracy}%`;
   document.getElementById('highScoreLabel').textContent = game.gameType === 'multiplication' ? '本遊戲最高' : '本級最高';
   document.getElementById('highScoreText').textContent = record.highScore;
+  const todayHigh = dailyScore(record, 0);
+  const yesterdayHigh = dailyScore(record, 1);
+  const trendMessage = document.getElementById('resultTrend');
+  if (yesterdayHigh == null) {
+    trendMessage.textContent = `🌟 今天最高 ${todayHigh} 分，這是你的新起點！`;
+    trendMessage.className = 'result-trend up';
+  } else {
+    const change = todayHigh - yesterdayHigh;
+    trendMessage.textContent = change > 0
+      ? `🎉 今天最高 ${todayHigh} 分，比昨天進步 ${change} 分！`
+      : change === 0
+        ? `💪 今天最高 ${todayHigh} 分，和昨天一樣穩定！`
+        : `🎯 今天最高 ${todayHigh} 分，距離昨天還差 ${Math.abs(change)} 分！`;
+    trendMessage.className = `result-trend ${change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'}`;
+  }
   showScreen('result');
 }
 
