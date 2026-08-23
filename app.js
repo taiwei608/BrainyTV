@@ -965,9 +965,8 @@ function navigationRoot() {
   if (openDialog) return openDialog;
 
   if (screens.game.classList.contains('active')) {
-    return state.settings.mode === 'choice'
-      ? document.getElementById('choiceArea')
-      : document.getElementById('keypadGrid');
+    // Include the HUD so D-pad users can reach the visible exit button.
+    return screens.game;
   }
 
   return Object.values(screens).find(screen => screen.classList.contains('active')) || document;
