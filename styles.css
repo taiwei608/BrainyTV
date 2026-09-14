@@ -342,3 +342,20 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .activity-category-title { margin-bottom: 7px; }
   #gamesScreen .games-section { gap: 10px; }
 }
+
+/* Keep leaderboard rows intact when the TV browser has limited vertical space. */
+#gamesScreen .leaderboard-overview { flex: 1 0 auto; }
+#gamesScreen .leaderboard-grid { flex-shrink: 0; min-height: min-content; }
+#gamesScreen .leaderboard-card { overflow: visible; }
+@media (max-height: 650px) {
+  #gamesScreen .topbar h1 { font-size: 28px; }
+  #gamesScreen .games-section { padding: 12px 16px; margin-top: 6px; gap: 6px; }
+  #gamesScreen .activity-category-title { font-size: 18px; margin-bottom: 5px; }
+  #gamesScreen .activity-category .game-card { height: 60px; padding: 8px 12px; gap: 10px; }
+  #gamesScreen .activity-category .game-icon { width: 40px; height: 40px; flex-basis: 40px; font-size: 30px; }
+  #gamesScreen .leaderboard-overview { padding-top: 6px; gap: 5px; }
+  #gamesScreen .leaderboard-card { padding: 7px; }
+  #gamesScreen .leaderboard-card-title { margin-bottom: 4px; }
+  #gamesScreen .leaderboard-entry { gap: 4px; padding: 3px 5px; }
+  #gamesScreen .inline-actions .btn { padding: 7px 14px; }
+}
