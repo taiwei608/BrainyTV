@@ -165,8 +165,8 @@ h2 { font-size: clamp(28px, 2.7vw, 44px); }
 .multiplication-table-header > p { margin: 0; color: var(--text-soft); font-size: clamp(17px,1.4vw,23px); font-weight: 800; }
 .multiplication-table-grid { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 10px; }
 .multiplication-table-column { min-width: 0; overflow: hidden; border: 1px solid rgba(103,232,249,.2); border-radius: 16px; background: rgba(2,6,23,.38); }
-.multiplication-table-column strong { display: block; padding: 10px 6px; background: linear-gradient(135deg,rgba(14,116,144,.7),rgba(79,70,229,.55)); color: #fff; text-align: center; font-size: clamp(16px,1.2vw,21px); }
-.multiplication-table-column span { display: block; padding: 6px 4px; color: #e0f2fe; text-align: center; font-size: clamp(14px,1vw,18px); font-weight: 800; white-space: nowrap; }
+.multiplication-table-column strong { display: block; padding: 10px 6px; background: linear-gradient(135deg,rgba(14,116,144,.7),rgba(79,70,229,.55)); color: #fff; text-align: center; font-size: clamp(22px,1.65vw,28px); }
+.multiplication-table-column span { display: block; padding: 6px 4px; color: #e0f2fe; text-align: center; font-size: clamp(20px,1.45vw,25px); font-weight: 800; white-space: nowrap; }
 .multiplication-table-column span:nth-child(odd) { background: rgba(148,163,184,.07); }
 .multiplication-table-actions { justify-content: center; margin-top: 20px; }
 .settings-panel { width: min(1280px, 100%); margin: clamp(18px,4vh,48px) auto 0; }
@@ -269,8 +269,8 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .multiplication-table-header { margin-bottom: 10px; }
   .multiplication-table-grid { gap: 6px; }
   .multiplication-table-column { border-radius: 11px; }
-  .multiplication-table-column strong { padding: 6px 3px; font-size: 15px; }
-  .multiplication-table-column span { padding: 3px 2px; font-size: 14px; }
+  .multiplication-table-column strong { padding: 6px 3px; font-size: 20px; }
+  .multiplication-table-column span { padding: 3px 2px; font-size: 18px; }
   .multiplication-table-actions { margin-top: 10px; }
   .scoreboard { padding: 12px; }
   .scoreboard-heading { margin-bottom: 7px; font-size: 15px; }
@@ -293,4 +293,52 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .stats-grid > div { padding: 10px; }
   .stats-grid span { font-size: 16px; }
   .stats-grid strong { margin-top: 2px; font-size: 30px; }
+}
+
+/* English listening: TV-sized controls, a single visible queue and player. */
+.game-card.listening-card { border-color: rgba(103,232,249,.4); background: linear-gradient(120deg,#0e7490,#4338ca); }
+#listeningUnitsScreen.active, #listeningScreen.active { display: flex; flex-direction: column; gap: 20px; }
+.listening-unit-panel { margin: auto 0; }
+.listening-unit-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 22px; }
+.listening-unit { min-height: 105px; }
+.listening-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; min-height: 0; }
+.listening-library, .listening-player { min-height: 0; }
+.listening-languages { display: flex; gap: 16px; margin-bottom: 20px; }
+.listening-languages .btn { flex: 1; }
+.listening-tracks { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.listening-track { text-align: left; min-height: 85px; }
+.listening-track strong, .listening-track small { display: block; }
+.listening-track small { font-size: .7em; color: var(--text-soft); margin-top: 3px; }
+.listening-hint { color: var(--text-soft); font-size: clamp(14px,1.2vw,20px); margin: 18px 0 0; }
+.listening-player h2 { margin: 10px 0; }
+.listening-player progress { width: 100%; height: 12px; accent-color: #22d3ee; }
+#listeningTime { color: var(--text-soft); margin: 8px 0; }
+#listeningStatus { min-height: 2.5em; font-size: clamp(16px,1.4vw,23px); }
+.listening-controls { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 15px; }
+#listeningMode { grid-column: span 2; }
+#listeningScreen button:disabled { opacity: .35; cursor: default; }
+@media (max-height: 800px) {
+  #listeningUnitsScreen.active, #listeningScreen.active { gap: 12px; }
+  .listening-unit { min-height: 86px; }
+  .listening-languages { margin-bottom: 12px; }
+  .listening-track { min-height: 68px; }
+  .listening-tracks, .listening-controls { gap: 12px; }
+  .listening-player h2 { font-size: 28px; }
+  .listening-hint { margin-top: 12px; }
+}
+
+/* Subject groups share exactly the same card and icon geometry. */
+#gamesScreen .games-section { gap: clamp(10px,1.6vh,18px); }
+.activity-category-title { margin: 0 0 10px; font-size: clamp(22px,2vw,32px); color: #dbeafe; }
+.activity-category .game-cards { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.activity-category .game-card { min-width: 0; height: clamp(80px,12vh,130px); min-height: 0; padding: 14px; gap: 12px; flex-direction: row; justify-content: flex-start; text-align: left; }
+.activity-category .game-icon { flex: 0 0 clamp(44px,4vw,64px); width: clamp(44px,4vw,64px); min-width: 0; height: clamp(44px,4vw,64px); border-radius: 14px; font-size: clamp(30px,3vw,46px); line-height: 1; }
+.activity-category .game-icon svg { width: 70%; height: 70%; }
+.activity-category .game-copy { min-width: 0; }
+.activity-category .game-copy strong { font-size: clamp(20px,1.8vw,30px); white-space: nowrap; }
+.activity-category .game-copy small { font-size: clamp(12px,1.05vw,18px); }
+#gamesScreen .inline-actions { margin-top: 0; }
+@media (max-height: 800px) {
+  .activity-category-title { margin-bottom: 7px; }
+  #gamesScreen .games-section { gap: 10px; }
 }

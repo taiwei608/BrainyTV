@@ -31,6 +31,8 @@ let creatureSample = null;
 let creatureStopTimer = null;
 
 const screens = {
+  listeningUnits: document.getElementById('listeningUnitsScreen'),
+  listening: document.getElementById('listeningScreen'),
   players: document.getElementById('playerScreen'),
   games: document.getElementById('gamesScreen'),
   settings: document.getElementById('settingsScreen'),
@@ -509,6 +511,7 @@ function renderScoreHistory(player, gameType) {
 }
 
 function showScreen(name) {
+  if (name !== 'listening') Listening.stop();
   if (name === 'games') renderGameLeaderboards();
   Object.values(screens).forEach(el => el.classList.remove('active'));
   screens[name].classList.add('active');
@@ -1010,6 +1013,10 @@ function handleBackAction() {
     }
   } else if (screens.game.classList.contains('active')) {
     openExitConfirmation();
+  } else if (screens.listening.classList.contains('active')) {
+    Listening.back();
+  } else if (screens.listeningUnits.classList.contains('active')) {
+    showScreen('games');
   } else if (screens.settings.classList.contains('active')) {
     showScreen('games');
   } else if (screens.games.classList.contains('active') || screens.result.classList.contains('active')) {
@@ -1099,6 +1106,8 @@ window.addEventListener('resize', () => window.scrollTo(0, 0));
 
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
+  if (action === 'open-listening') Listening.open();
+  if (action === 'listening-back') Listening.back();
   if (action === 'add-player') {
     document.getElementById('playerName').value = '';
     document.getElementById('playerDialog').showModal();

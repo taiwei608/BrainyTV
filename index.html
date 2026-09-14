@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
   <title>Brainy Arena</title>
-  <link rel="stylesheet" href="styles.css?v=20260823-division-choice" />
+  <link rel="stylesheet" href="styles.css?v=20260914-activity-groups" />
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -28,7 +28,7 @@
           <div class="inline-actions">
             <button class="btn secondary" data-action="add-player">＋ 新增玩家</button>
             <button class="btn danger" data-action="manage-player">玩家管理</button>
-            <button class="btn primary step-next" data-action="choose-game">下一步：選遊戲</button>
+            <button class="btn primary step-next" data-action="choose-game">下一步：選活動</button>
           </div>
         </section>
       </div>
@@ -36,10 +36,12 @@
 
     <section id="gamesScreen" class="screen" aria-labelledby="gamesTitle">
       <header class="topbar">
-        <div><p class="eyebrow">步驟 2</p><h1 id="gamesTitle">選擇遊戲</h1></div>
+        <div><p class="eyebrow">步驟 2</p><h1 id="gamesTitle">選擇活動</h1></div>
         <div class="player-badge selected-player-badge">—</div>
       </header>
       <section class="games-section panel">
+        <section class="activity-category" aria-labelledby="mathActivitiesTitle">
+        <h2 id="mathActivitiesTitle" class="activity-category-title">數學</h2>
         <div class="game-cards focus-grid">
           <button class="game-card featured" data-game="multiplication">
             <span class="game-icon">×</span>
@@ -49,15 +51,45 @@
           <button class="game-card subtraction-card" data-game="subtraction"><span class="game-icon">−</span><span class="game-copy"><strong>減法挑戰</strong><small>個位・十位・百位</small></span></button>
           <button class="game-card division-card" data-game="division"><span class="game-icon">÷</span><span class="game-copy"><strong>除法挑戰</strong><small>整除題・沒有餘數</small></span></button>
         </div>
+        </section>
+        <section class="activity-category" aria-labelledby="englishActivitiesTitle">
+          <h2 id="englishActivitiesTitle" class="activity-category-title">英文</h2>
+          <div class="game-cards focus-grid">
+            <button class="game-card listening-card" data-action="open-listening">
+              <span class="game-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="12" width="4" height="8" rx="2"/><rect x="17" y="12" width="4" height="8" rx="2"/></svg></span>
+              <span class="game-copy"><strong>英文聽聽</strong><small>SuperFun 第 5 冊</small></span>
+            </button>
+          </div>
+        </section>
         <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
           <div class="leaderboard-overview-heading">
-            <h2 id="leaderboardTitle">🏆 全遊戲排行榜</h2>
+            <h2 id="leaderboardTitle">🏆 數學排行榜</h2>
             <span>最高分玩家・同分並列</span>
           </div>
           <div id="gameLeaderboards" class="leaderboard-grid"></div>
         </section>
         <div class="inline-actions"><button class="btn secondary" data-action="back-players">返回選玩家</button></div>
       </section>
+    </section>
+
+    <section id="listeningUnitsScreen" class="screen" aria-labelledby="listeningUnitsTitle">
+      <header class="topbar"><div><p class="eyebrow">SuperFun 第 5 冊</p><h1 id="listeningUnitsTitle">🎧 英文聽聽</h1></div><button class="btn secondary" data-action="back-games">返回活動</button></header>
+      <div class="panel listening-unit-panel"><h2>今天想聽哪一課？</h2><div id="listeningUnits" class="listening-unit-grid"></div><p class="listening-hint">選單元，再選一首開始聽。同單元會依序連播。</p></div>
+    </section>
+
+    <section id="listeningScreen" class="screen" aria-labelledby="listeningTitle">
+      <header class="topbar"><div><p class="eyebrow">英文聽聽 · SuperFun 第 5 冊</p><h1 id="listeningTitle">第 1 單元</h1></div><button class="btn secondary" data-action="listening-back">返回單元</button></header>
+      <div class="listening-layout">
+        <div class="panel listening-library"><div class="listening-languages" role="group" aria-label="音檔語言"><button class="btn" data-listening-language="zh">中英</button><button class="btn" data-listening-language="en">全英</button></div><div id="listeningTracks" class="listening-tracks"></div><p id="listeningLanguageHint" class="listening-hint"></p></div>
+        <div class="panel listening-player">
+          <p class="eyebrow">正在聽</p><h2 id="listeningNow">選一首開始聽</h2><p id="listeningDetail"></p>
+          <progress id="listeningProgress" value="0" max="1" aria-label="播放進度"></progress><p id="listeningTime">0:00 / 0:00</p>
+          <p id="listeningStatus" role="status" aria-live="polite">選一首後，會從這首開始單元連播。</p>
+          <div class="listening-controls"><button class="btn secondary" data-listening-control="previous"><span aria-hidden="true">⏮</span> 上一首</button><button class="btn primary" id="listeningPlay" data-listening-control="play">播放</button><button class="btn secondary" data-listening-control="next"><span aria-hidden="true">⏭</span> 下一首</button><button class="btn secondary" data-listening-control="restart">從頭重播</button><button class="btn secondary" id="listeningMode" data-listening-control="mode">模式：單元連播</button></div>
+          <p class="listening-hint">音檔來源：Melody Media Player<br>遊戲活動等內容可能需搭配課本。</p>
+        </div>
+      </div>
+      <audio id="listeningAudio" preload="none"></audio>
     </section>
 
     <section id="settingsScreen" class="screen" aria-labelledby="settingsTitle">
@@ -200,6 +232,8 @@
     </div>
   </dialog>
 
-  <script src="app.js?v=20260823-division-choice"></script>
+  <script src="listening-data.js?v=20260914"></script>
+  <script src="listening.js?v=20260914-play-counts"></script>
+  <script src="app.js?v=20260914-listening"></script>
 </body>
 </html>
