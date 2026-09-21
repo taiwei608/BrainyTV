@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
   <title>Brainy Arena</title>
-  <link rel="stylesheet" href="styles.css?v=20260914-leaderboard-fit" />
+  <link rel="stylesheet" href="styles.css?v=20260921-strokes" />
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -52,6 +52,7 @@
           <button class="game-card division-card" data-game="division"><span class="game-icon">÷</span><span class="game-copy"><strong>除法挑戰</strong><small>整除題・沒有餘數</small></span></button>
         </div>
         </section>
+        <div class="activity-minor-row">
         <section class="activity-category" aria-labelledby="englishActivitiesTitle">
           <h2 id="englishActivitiesTitle" class="activity-category-title">英文</h2>
           <div class="game-cards focus-grid">
@@ -61,6 +62,16 @@
             </button>
           </div>
         </section>
+        <section class="activity-category" aria-labelledby="chineseActivitiesTitle">
+          <h2 id="chineseActivitiesTitle" class="activity-category-title">國字</h2>
+          <div class="game-cards focus-grid">
+            <button class="game-card stroke-card" data-action="open-stroke-game">
+              <span class="game-icon" aria-hidden="true">永</span>
+              <span class="game-copy"><strong>筆順小挑戰</strong><small>看位置，找下一筆</small></span>
+            </button>
+          </div>
+        </section>
+        </div>
         <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
           <div class="leaderboard-overview-heading">
             <h2 id="leaderboardTitle">🏆 數學排行榜</h2>
@@ -191,6 +202,28 @@
         <button class="btn secondary" data-action="back-home">回首頁</button>
       </div>
     </section>
+
+    <section id="strokeIntroScreen" class="screen" aria-labelledby="strokeIntroTitle">
+      <header class="topbar"><div><p class="eyebrow">國字</p><h1 id="strokeIntroTitle">筆順小挑戰</h1></div><div class="player-badge selected-player-badge">—</div></header>
+      <div class="panel stroke-intro-panel">
+        <div><p class="stroke-intro-glyph" aria-hidden="true">永</p><h2>找出下一筆</h2><p>每輪練習 5 個字。看完整個字的位置，再選下一筆。</p><p id="strokeProgressSummary" class="stroke-progress-summary"></p></div>
+        <div class="stroke-intro-actions focus-grid"><button class="btn primary" data-stroke-action="start">開始</button><button class="btn secondary" data-stroke-action="demo">先看示範</button><button class="btn secondary" data-stroke-action="back">返回活動</button></div>
+      </div>
+    </section>
+
+    <section id="strokeGameScreen" class="screen" aria-labelledby="strokeGameTitle">
+      <header class="game-hud stroke-hud"><div><span class="hud-label">玩家</span><strong id="strokePlayer">—</strong></div><div><span class="hud-label">本輪</span><strong id="strokeRoundText">1 / 5</strong></div><div><span class="hud-label">目前字</span><strong id="strokeGameTitle">—</strong></div><button class="exit-game-btn" data-stroke-action="exit">退出練習</button></header>
+      <div class="stroke-stage">
+        <section class="stroke-board-panel"><div id="strokeBoard" class="tian-grid" aria-label="筆順示範"></div><p id="strokePrompt" class="stroke-prompt" aria-live="polite"></p></section>
+        <section><div id="strokeChoices" class="stroke-choices focus-grid"></div><button id="strokeNextButton" class="btn primary stroke-next hidden" data-stroke-action="next">下一步</button></section>
+      </div>
+      <p class="remote-hint">方向鍵選擇・OK 確認</p>
+    </section>
+
+    <section id="strokeResultScreen" class="screen result-screen" aria-labelledby="strokeResultTitle">
+      <p class="eyebrow">本輪完成</p><h2 id="strokeResultTitle">練習完成！</h2><p id="strokeResultSummary" class="stroke-result-summary"></p>
+      <div class="result-actions focus-grid"><button class="btn primary" data-stroke-action="again">再練一輪</button><button class="btn secondary" data-stroke-action="home">回活動</button></div>
+    </section>
   </main>
 
   <dialog id="playerDialog" class="dialog">
@@ -232,8 +265,14 @@
     </div>
   </dialog>
 
+  <dialog id="strokeExitDialog" class="dialog">
+    <div class="dialog-card exit-confirmation"><h2>要離開這輪練習嗎？</h2><p>已完成的筆畫紀錄會保留。</p><div class="dialog-actions"><button class="btn primary" data-stroke-action="continue">繼續練習</button><button class="btn danger" data-stroke-action="confirm-exit">離開練習</button></div></div>
+  </dialog>
+
   <script src="listening-data.js?v=20260914"></script>
   <script src="listening.js?v=20260914-play-counts"></script>
-  <script src="app.js?v=20260914-listening"></script>
+  <script src="stroke-data.js?v=20260921" onerror="this.remove()"></script>
+  <script src="stroke-game.js?v=20260921"></script>
+  <script src="app.js?v=20260921-strokes"></script>
 </body>
 </html>

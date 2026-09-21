@@ -1,0 +1,11 @@
+{
+  "source": "https://github.com/parsimonhi/animCJK",
+  "sourceFile": "graphicsZhHant.txt",
+  "commit": "ec5e17cca76c87587790bcbce5ea0b4d4fb753d6",
+  "rawUrl": "https://raw.githubusercontent.com/parsimonhi/animCJK/ec5e17cca76c87587790bcbce5ea0b4d4fb753d6/graphicsZhHant.txt",
+  "selection": "拍手左右你他也上下這是誰的我分好了啊多個秋千和玩高",
+  "omitted": {
+    "陪": "Absent from graphicsZhHant.txt at the pinned commit; no other-locale glyph was substituted."
+  },
+  "coordinateSystem": "HanziWriter/MakeMeAHanzi-style character coordinates: 1024-unit canvas, y increasing upward, conventional SVG flip baseline 900"
+}

@@ -33,6 +33,9 @@ let creatureStopTimer = null;
 const screens = {
   listeningUnits: document.getElementById('listeningUnitsScreen'),
   listening: document.getElementById('listeningScreen'),
+  strokeIntro: document.getElementById('strokeIntroScreen'),
+  strokeGame: document.getElementById('strokeGameScreen'),
+  strokeResult: document.getElementById('strokeResultScreen'),
   players: document.getElementById('playerScreen'),
   games: document.getElementById('gamesScreen'),
   settings: document.getElementById('settingsScreen'),
@@ -512,6 +515,7 @@ function renderScoreHistory(player, gameType) {
 
 function showScreen(name) {
   if (name !== 'listening') Listening.stop();
+  if (name !== 'strokeGame') StrokeGame.leaveScreen();
   if (name === 'games') renderGameLeaderboards();
   Object.values(screens).forEach(el => el.classList.remove('active'));
   screens[name].classList.add('active');
@@ -882,6 +886,7 @@ function confirmPlayerAction() {
     player.plays = 0;
     player.questionStats = {};
     player.progress = createProgressMap();
+    player.strokePilot = { cursor: 0, practicedChars: [], stats: {} };
   } else {
     state.players = state.players.filter(item => item.id !== playerId);
     if (state.currentPlayerId === playerId) state.currentPlayerId = state.players[0]?.id || null;
@@ -997,9 +1002,12 @@ function handleBackAction() {
   lastBackActionAt = now;
 
   const exitDialog = document.getElementById('exitDialog');
+  const strokeExitDialog = document.getElementById('strokeExitDialog');
   const playerDialog = document.getElementById('playerDialog');
   const multiplicationTableDialog = document.getElementById('multiplicationTableDialog');
-  if (multiplicationTableDialog.open) {
+  if (strokeExitDialog.open) {
+    StrokeGame.closeExit();
+  } else if (multiplicationTableDialog.open) {
     closeMultiplicationTable();
   } else if (exitDialog.open) {
     closeExitConfirmation();
@@ -1013,6 +1021,10 @@ function handleBackAction() {
     }
   } else if (screens.game.classList.contains('active')) {
     openExitConfirmation();
+  } else if (screens.strokeGame.classList.contains('active')) {
+    StrokeGame.handleBack();
+  } else if (screens.strokeIntro.classList.contains('active') || screens.strokeResult.classList.contains('active')) {
+    showScreen('games');
   } else if (screens.listening.classList.contains('active')) {
     Listening.back();
   } else if (screens.listeningUnits.classList.contains('active')) {
@@ -1107,6 +1119,7 @@ window.addEventListener('resize', () => window.scrollTo(0, 0));
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'open-listening') Listening.open();
+  if (action === 'open-stroke-game') StrokeGame.open();
   if (action === 'listening-back') Listening.back();
   if (action === 'add-player') {
     document.getElementById('playerName').value = '';
@@ -1174,6 +1187,12 @@ document.getElementById('multiplicationTableDialog').addEventListener('cancel', 
 
 document.getElementById('exitDialog').addEventListener('close', () => {
   if (game) game.paused = false;
+});
+
+StrokeGame.init({
+  getPlayer: currentPlayer,
+  save: saveState,
+  showScreen
 });
 
 function shuffle(arr) {
