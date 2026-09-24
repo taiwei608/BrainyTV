@@ -389,6 +389,7 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
 .stroke-choice { min-height: 0; aspect-ratio: 1.35; padding: 8px; overflow: hidden; border: 3px solid rgba(148,163,184,.38); border-radius: 22px; background: #fffdf7; }
 .stroke-choice.correct { border-color: #4ade80; box-shadow: 0 0 0 5px rgba(74,222,128,.3); }
 .stroke-choice.wrong { border-color: #fb7185; background: #fff1f2; box-shadow: 0 0 0 5px rgba(251,113,133,.28); }
+.stroke-choice.wrong:disabled { opacity: 1; cursor: default; }
 .stroke-next { width: 100%; margin-top: 18px; }
 .stroke-result-summary { margin: 60px auto; color: #e0f2fe; font-size: clamp(26px,3vw,44px); font-weight: 900; }
 @media (max-width: 800px) {

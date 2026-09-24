@@ -13,6 +13,7 @@
   let animationTimer = null;
   let animationToken = 0;
   let activationLockedUntil = 0;
+  let exitFocusTimer = null;
 
   function isTeachingStep(strokeIndex, strokeCount) {
     return strokeCount > 0 && strokeIndex === strokeCount - 1;
@@ -43,14 +44,9 @@
     const count = character?.strokes?.length || 0;
     if (!count || strokeIndex < 0 || strokeIndex >= count || isTeachingStep(strokeIndex, count)) return [];
     const others = [];
-    for (let distance = 1; distance < count; distance += 1) {
-      const after = strokeIndex + distance;
-      const before = strokeIndex - distance;
-      if (after < count) others.push(after);
-      if (before >= 0) others.push(before);
-    }
-    const optionCount = Math.min(Math.max(2, maxOptions || 4), 4, count);
-    const indexes = [strokeIndex, ...others.filter(index => index !== strokeIndex)].slice(0, optionCount);
+    for (let index = strokeIndex + 1; index < count; index += 1) others.push(index);
+    const optionCount = Math.min(Math.max(2, maxOptions || 4), 4, count - strokeIndex);
+    const indexes = [strokeIndex, ...others].slice(0, optionCount);
     return indexes.map(index => ({
       strokeIndex: index,
       correct: index === strokeIndex,
@@ -79,8 +75,14 @@
   function resumeAction(mode, phase) {
     if (mode === 'demo') return phase === 'demo-ready' ? 'focus' : 'replay-demo';
     if (phase === 'animating') return 'replay-stroke';
-    if (phase === 'ready') return 'focus';
     return 'focus-choice';
+  }
+  function attemptOutcome(phase, correct) {
+    if (phase !== 'choices') return 'ignore';
+    return correct ? 'animate' : 'retry';
+  }
+  function nextPosition(strokeAt, strokeCount, charAt) {
+    return strokeAt + 1 < strokeCount ? { strokeAt: strokeAt + 1, charAt } : { strokeAt: 0, charAt: charAt + 1 };
   }
 
   function createSvg(character, highlighted, completedThrough, options) {
@@ -153,7 +155,7 @@
       return;
     }
     const pilot = ensurePlayerPilot(player);
-    session = { mode: 'play', phase: 'choices', playerId: player.id, round: chooseRound(characters, pilot.cursor, ROUND_SIZE), charAt: 0, strokeAt: 0, correct: 0, wrong: 0, answered: false };
+    session = { mode: 'play', phase: 'choices', playerId: player.id, round: chooseRound(characters, pilot.cursor, ROUND_SIZE), charAt: 0, strokeAt: 0, correct: 0, wrong: 0 };
     document.getElementById('strokePlayer').textContent = player.name;
     hooks.showScreen('strokeGame');
     renderStep();
@@ -187,12 +189,11 @@
     const choices = document.getElementById('strokeChoices');
     choices.innerHTML = '';
     document.getElementById('strokeNextButton').classList.add('hidden');
-    session.answered = false;
     session.phase = 'choices';
+    activationLockedUntil = Date.now() + 350;
     if (teaching) {
-      session.answered = true;
       session.phase = 'animating';
-      animateStroke(character, session.strokeAt, () => showNext('看完了，下一個'));
+      animateStroke(character, session.strokeAt, autoAdvance);
       return;
     }
     const options = shuffle(buildOptions(character, session.strokeAt, 4).slice());
@@ -209,9 +210,7 @@
   }
 
   function chooseStroke(option, button) {
-    if (!session || session.answered || Date.now() < activationLockedUntil) return;
-    session.answered = true;
-    session.phase = 'animating';
+    if (!session || session.phase !== 'choices' || button.disabled || Date.now() < activationLockedUntil) return;
     activationLockedUntil = Date.now() + 350;
     const correct = option.correct;
     const player = hooks.getPlayer();
@@ -219,29 +218,32 @@
     player.strokePilot = recordAttempt(player.strokePilot, currentCharacter().char, session.strokeAt, correct);
     correct ? session.correct += 1 : session.wrong += 1;
     hooks.save();
-    document.querySelectorAll('#strokeChoices button').forEach(item => { item.disabled = true; });
     button.classList.add(correct ? 'correct' : 'wrong');
-    document.getElementById('strokePrompt').textContent = correct ? '答對了！看清楚書寫方向' : '再看一次，正確的下一筆是這樣';
-    animateStroke(currentCharacter(), session.strokeAt, () => showNext('下一筆'));
+    if (attemptOutcome(session.phase, correct) === 'retry') {
+      button.disabled = true;
+      document.getElementById('strokePrompt').textContent = '再試一次，看看下一筆的位置';
+      requestAnimationFrame(() => document.querySelector('#strokeChoices button:not([disabled])')?.focus({ preventScroll: true }));
+      return;
+    }
+    session.phase = 'animating';
+    document.querySelectorAll('#strokeChoices button').forEach(item => { item.disabled = true; });
+    document.getElementById('strokePrompt').textContent = '答對了！看清楚書寫方向';
+    animateStroke(currentCharacter(), session.strokeAt, autoAdvance);
   }
 
-  function showNext(label) {
-    if (!session) return;
-    session.phase = session.mode === 'demo' ? 'demo-ready' : 'ready';
-    const button = document.getElementById('strokeNextButton');
-    button.textContent = label;
-    button.classList.remove('hidden');
-    activationLockedUntil = Date.now() + 300;
-    requestAnimationFrame(() => button.focus({ preventScroll: true }));
+  function autoAdvance() {
+    if (!session || session.mode !== 'play' || session.phase !== 'animating') return;
+    const character = currentCharacter();
+    const next = nextPosition(session.strokeAt, character.strokes.length, session.charAt);
+    session.strokeAt = next.strokeAt;
+    session.charAt = next.charAt;
+    renderStep();
   }
 
   function nextStep() {
-    if (!session || !canAdvance(session.phase, Date.now(), activationLockedUntil)) return;
-    if (session.mode === 'demo' && session.demoComplete) { session.demoComplete = false; playDemo(); return; }
-    const character = currentCharacter();
-    if (session.strokeAt + 1 < character.strokes.length) session.strokeAt += 1;
-    else { session.charAt += 1; session.strokeAt = 0; }
-    renderStep();
+    if (!session || session.mode !== 'demo' || !session.demoComplete || !canAdvance(session.phase, Date.now(), activationLockedUntil)) return;
+    session.demoComplete = false;
+    playDemo();
   }
 
   function animateStroke(character, index, done) {
@@ -294,6 +296,7 @@
     session.charAt = 0; session.strokeAt = 0;
     session.demoComplete = true;
     session.phase = 'demo-ready';
+    activationLockedUntil = Date.now() + 300;
     document.getElementById('strokePrompt').textContent = '示範看完了，可以再播放一次';
     const button = document.getElementById('strokeNextButton');
     button.textContent = '重新播放'; button.classList.remove('hidden');
@@ -308,25 +311,36 @@
       pilot.practicedChars = [...new Set([...pilot.practicedChars, ...session.round.map(item => item.char)])];
       hooks.save();
     }
-    document.getElementById('strokeResultSummary').textContent = `練習過 ${session.round.length} 個字・答對 ${session.correct} 次・再看 ${session.wrong} 次`;
+    document.getElementById('strokeResultSummary').textContent = `練習過 ${session.round.length} 個字・答對 ${session.correct} 次・重試 ${session.wrong} 次`;
     hooks.showScreen('strokeResult');
   }
 
   function handleBack() { if (session) openExit(); else hooks.showScreen('games'); }
-  function openExit() { cancelAnimation(); const dialog = document.getElementById('strokeExitDialog'); if (!dialog.open) dialog.showModal(); setTimeout(() => document.querySelector('#strokeExitDialog button')?.focus(), 30); }
+  function openExit() {
+    cancelAnimation();
+    if (exitFocusTimer) clearTimeout(exitFocusTimer);
+    const dialog = document.getElementById('strokeExitDialog');
+    if (!dialog.open) dialog.showModal();
+    exitFocusTimer = setTimeout(() => {
+      exitFocusTimer = null;
+      if (dialog.open && session) document.querySelector('#strokeExitDialog button')?.focus();
+    }, 30);
+  }
   function closeExit() {
     const dialog = document.getElementById('strokeExitDialog');
+    if (exitFocusTimer) clearTimeout(exitFocusTimer);
+    exitFocusTimer = null;
     if (dialog.open) dialog.close();
     if (!session) return;
     const action = resumeAction(session.mode, session.phase);
     if (action === 'replay-demo') playDemo();
-    else if (action === 'replay-stroke') animateStroke(currentCharacter(), session.strokeAt, () => showNext(isTeachingStep(session.strokeAt, currentCharacter().strokes.length) ? '看完了，下一個' : '下一筆'));
+    else if (action === 'replay-stroke') animateStroke(currentCharacter(), session.strokeAt, autoAdvance);
     else if (action === 'focus') requestAnimationFrame(() => document.getElementById('strokeNextButton')?.focus({ preventScroll: true }));
     else requestAnimationFrame(() => document.querySelector('#strokeChoices button:not([disabled])')?.focus({ preventScroll: true }));
   }
-  function leaveScreen() { cancelAnimation(); session = null; }
+  function leaveScreen() { cancelAnimation(); if (exitFocusTimer) clearTimeout(exitFocusTimer); exitFocusTimer = null; session = null; }
   function cancelAnimation() { animationToken += 1; if (animationFrame) cancelAnimationFrame(animationFrame); if (animationTimer) clearTimeout(animationTimer); animationFrame = null; animationTimer = null; }
   function shuffle(items) { for (let i = items.length - 1; i > 0; i -= 1) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; } return items; }
 
-  return { init, open, leaveScreen, handleBack, closeExit, isTeachingStep, normalizePilot, chooseRound, buildOptions, recordAttempt, advanceCursor, canAdvance, resumeAction };
+  return { init, open, leaveScreen, handleBack, closeExit, isTeachingStep, normalizePilot, chooseRound, buildOptions, recordAttempt, advanceCursor, canAdvance, resumeAction, attemptOutcome, nextPosition };
 });
