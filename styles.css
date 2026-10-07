@@ -15,6 +15,54 @@
   --shadow-lg: 0 24px 70px rgba(2,6,23,.46);
 }
 
+#pokemonScreen.active { display: flex; flex-direction: column; gap: 18px; }
+#pokemonScreen h1 { font-size: clamp(30px,3.5vw,54px); }
+#pokemonContent { overflow: auto; flex: 1; min-height: 0; font-size: clamp(18px,1.4vw,24px); }
+.pokemon-card { width: 100%; padding: 12px 20px; background: linear-gradient(120deg,#71343e,#473275); }
+.pokemon-card .game-icon { width: 46px; height: 46px; font-size: 32px; }
+.poke-home { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; margin-bottom: 26px; }
+.poke-home .btn { padding: 50px 20px; font-size: clamp(26px,2.8vw,42px); }
+.poke-home small { font-size: 20px; }
+.poke-type { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; background: var(--type-color); color: #101827; font-weight: 900; padding: 5px 12px; border-radius: 999px; font-size: 18px; }
+.poke-type span { background: rgba(255,255,255,.4); border-radius: 50%; display: inline-grid; place-items: center; width: 28px; height: 28px; }
+.poke-type .poke-type-symbol { background-size: 140px 28px; background-position: -5px center; background-repeat: no-repeat; border-radius: 0; }
+.poke-icon-reference { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 16px; margin-bottom: 24px; }
+.poke-icon-reference img { display: block; width: 100%; max-width: 200px; height: auto; margin-bottom: 6px; }
+.poke-type-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
+.poke-type-grid .btn { padding: 10px 6px; }
+#pokemonContent [aria-pressed="true"] { border-color: #67e8f9; box-shadow: inset 0 0 0 2px #67e8f9; }
+.poke-match { background: #253552; padding: 22px; border-radius: 20px; margin-bottom: 24px; }
+.poke-match h2 { margin: 12px 0; color: #fde68a; }
+.poke-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+.poke-toolbar .btn { padding: 10px 16px; font-size: 18px; }
+.poke-search { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 18px; }
+.poke-search input { flex: 1; min-width: 200px; background: #0f172a; color: #fff; border: 2px solid #64748b; border-radius: 14px; padding: 12px; }
+.poke-pager { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; }
+.poke-pager .btn { font-size: 20px; padding: 12px 22px; }
+.poke-library { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
+.poke-library .btn { padding: 18px; display: flex; align-items: start; flex-direction: column; gap: 10px; }
+.poke-library strong { font-size: 26px; }
+.poke-library small { font-size: 18px; color: #cbd5e1; }
+.poke-results { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 14px; margin-bottom: 26px; }
+.poke-results > div { background: #22304a; padding: 12px; border-radius: 12px; }
+.poke-results strong { display: block; margin-top: 8px; font-size: 24px; }
+.poke-overview { display: flex; align-items: center; gap: 26px; margin: 20px 0; }
+.poke-overview img { object-fit: contain; image-rendering: pixelated; }
+.poke-evolution section { padding: 20px; border: 1px solid #64748b; border-radius: 18px; margin-bottom: 16px; }
+.poke-note { color: #cbd5e1; font-size: 18px; line-height: 1.7; }
+.poke-moves { width: 100%; border-collapse: collapse; font-size: 20px; }
+.poke-moves th, .poke-moves td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #475569; }
+.poke-moves th { color: #93c5fd; }
+#pokemonContent [data-poke-scroll]:focus { outline: 4px solid var(--focus); outline-offset: -4px; }
+@media (max-width: 850px) {
+  .poke-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .poke-type-grid, .poke-results { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .poke-overview { flex-wrap: wrap; }
+  .poke-moves { font-size: 16px; }
+  .poke-moves th, .poke-moves td { padding: 8px 4px; }
+  .poke-moves .poke-type { font-size: 14px; padding: 3px 6px; }
+}
+
 * { box-sizing: border-box; }
 html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
 body { position: relative; margin: 0; background: radial-gradient(circle at 20% 0, #172554 0, #0b1324 38%, #030712 100%); }
@@ -330,7 +378,7 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
 /* Subject groups share exactly the same card and icon geometry. */
 #gamesScreen .games-section { gap: clamp(10px,1.6vh,18px); }
 .activity-category-title { margin: 0 0 10px; font-size: clamp(22px,2vw,32px); color: #dbeafe; }
-.activity-minor-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.activity-minor-row { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
 .activity-minor-row .game-cards { grid-template-columns: 1fr; }
 .activity-category .game-cards { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
 .activity-minor-row .activity-category .game-cards { grid-template-columns: minmax(0,1fr); }

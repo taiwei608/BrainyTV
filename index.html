@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
   <title>Brainy Arena</title>
-  <link rel="stylesheet" href="styles.css?v=20260922-stroke-retry" />
+  <link rel="stylesheet" href="styles.css?v=20261007-pokemon" />
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -72,6 +72,10 @@
             </button>
           </div>
         </section>
+        <section class="activity-category" aria-labelledby="pokemonActivitiesTitle">
+          <h2 id="pokemonActivitiesTitle" class="activity-category-title">寶可夢</h2>
+          <button class="game-card pokemon-card" data-action="open-pokemon"><span class="game-icon" aria-hidden="true">◉</span><span class="game-copy"><strong>寶可夢專區</strong><small>屬性相剋・朱／紫圖鑑</small></span></button>
+        </section>
         </div>
         <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
           <div class="leaderboard-overview-heading">
@@ -84,6 +88,10 @@
       </section>
     </section>
 
+    <section id="pokemonScreen" class="screen" aria-labelledby="pokemonTitle">
+      <header class="topbar"><div><p class="eyebrow">POKÉMON · 朱／紫</p><h1 id="pokemonTitle">寶可夢專區</h1></div><button id="pokemonBack" class="btn secondary" data-poke="back">返回活動</button></header>
+      <div id="pokemonContent" class="panel"></div>
+    </section>
     <section id="listeningUnitsScreen" class="screen" aria-labelledby="listeningUnitsTitle">
       <header class="topbar"><div><p class="eyebrow">SuperFun 第 5 冊</p><h1 id="listeningUnitsTitle">🎧 英文聽聽</h1></div><button class="btn secondary" data-action="back-games">返回活動</button></header>
       <div class="panel listening-unit-panel"><h2>今天想聽哪一課？</h2><div id="listeningUnits" class="listening-unit-grid"></div><p class="listening-hint">選單元，再選一首開始聽。同單元會依序連播。</p></div>
@@ -274,6 +282,8 @@
   <script src="listening.js?v=20260914-play-counts"></script>
   <script src="stroke-data.js?v=20260921" onerror="this.remove()"></script>
   <script src="stroke-game.js?v=20260922-auto-advance"></script>
-  <script src="app.js?v=20260921-strokes"></script>
+  <script src="pokemon-data.js?v=20261007"></script>
+  <script src="pokemon.js?v=20261007"></script>
+  <script src="app.js?v=20261007-pokemon"></script>
 </body>
 </html>

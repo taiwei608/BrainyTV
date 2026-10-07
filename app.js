@@ -31,6 +31,7 @@ let creatureSample = null;
 let creatureStopTimer = null;
 
 const screens = {
+  pokemon: document.getElementById('pokemonScreen'),
   listeningUnits: document.getElementById('listeningUnitsScreen'),
   listening: document.getElementById('listeningScreen'),
   strokeIntro: document.getElementById('strokeIntroScreen'),
@@ -921,6 +922,7 @@ function focusWithoutScroll(el) {
   } catch {
     el.focus();
   }
+  if (el.closest('#pokemonContent')) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   // TV Bro may pan its WebView after focus even when the document cannot
   // normally scroll. Restore the fixed game viewport after that native step.
   requestAnimationFrame(() => window.scrollTo(0, 0));
@@ -1027,6 +1029,8 @@ function handleBackAction() {
     showScreen('games');
   } else if (screens.listening.classList.contains('active')) {
     Listening.back();
+  } else if (screens.pokemon.classList.contains('active')) {
+    Pokemon.back();
   } else if (screens.listeningUnits.classList.contains('active')) {
     showScreen('games');
   } else if (screens.settings.classList.contains('active')) {
@@ -1119,6 +1123,7 @@ window.addEventListener('resize', () => window.scrollTo(0, 0));
 document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (action === 'open-listening') Listening.open();
+  if (action === 'open-pokemon') Pokemon.open();
   if (action === 'open-stroke-game') StrokeGame.open();
   if (action === 'listening-back') Listening.back();
   if (action === 'add-player') {
