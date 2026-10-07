@@ -19,8 +19,10 @@ assert.equal(api.multiplier(10,11,16),0.25);
 assert.equal(api.multiplier(10,12,12),2);
 for(const p of data.pokemon){assert.ok(!p.slug.includes('-mega')&&!p.slug.includes('-gmax'));assert.ok(data.species.some(s=>s.id===p.species));assert.equal(p.stats.length,6);for(const m of p.moves)assert.ok(data.moves[m[0]]);}
 api.open(); assert.equal(screen,'pokemon');assert.match(html(),/屬性與相剋/);
-click('types');assert.match(html(),/朱／紫屬性圖示/);assert.match(html(),/傷害 2 倍/);
-click('second',9);assert.match(html(),/傷害 4 倍/);api.back();
+click('types');assert.equal((html().match(/class="poke-type-row"/g)||[]).length,18);
+assert.equal((html().match(/data-multiplier=/g)||[]).length,72);
+assert.doesNotMatch(html(),/data-poke="(?:attack|defense|second)"/);
+assert.match(html(),/×0.5/);assert.match(html(),/×0 /);api.back();
 click('dex');assert.match(html(),/共 400 筆/);assert.match(html(),/新葉喵/);
 click('page',1);assert.match(html(),/第 2 \/ 34 頁/);api.back();click('dex');
 context.document.getElementById('pokeQuery').value='皮卡丘';events.submit({target:{id:'pokemonSearch'},preventDefault(){}});assert.match(html(),/共 1 筆/);
