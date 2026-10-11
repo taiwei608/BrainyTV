@@ -478,23 +478,22 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
 #pokemonContent:has(.poke-type-view) { padding: clamp(10px,1.8vh,20px); overflow: hidden; container-type: size; }
 .poke-type-picker { display: grid; grid-template-columns: repeat(18,minmax(0,1fr)); gap: 4px; flex-shrink: 0; }
 .poke-type-picker .btn { display: flex; justify-content: center; padding: 8px 0; border-radius: 10px; min-width: 0; }
-.poke-type-picker .poke-card-type { --type-icon-size: min(3.5vw,5.5vh,48px); }
+.poke-type-picker .poke-card-type { --type-icon-size: min(calc((100cqw - 68px) / 18 - 10px),9vh); }
 .poke-type-picker [aria-pressed="true"] { background: #164e63; }
 .poke-single-type { flex: 1; min-height: 0; padding: clamp(8px,1.5vh,18px); display: flex; flex-direction: column; }
 .poke-single-type h2 { justify-content: center; margin: 0 0 clamp(6px,1vh,14px); }
-.poke-single-type h2 .poke-card-type { --type-icon-size: min(8vh,72px); }
+.poke-single-type h2 .poke-card-type { --type-icon-size: min(11vh,7vw); }
 .poke-type-position { font-size: 20px; color: var(--text-soft); margin-left: 20px; }
 .poke-single-matchups { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; flex: 1; min-height: 0; }
-.poke-single-matchups .poke-matchup-section { display: flex; flex-direction: column; min-width: 0; }
+.poke-single-matchups .poke-matchup-section { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .poke-single-matchups .poke-matchup-section + .poke-matchup-section { margin: 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid #475569; }
 .poke-single-matchups .poke-matchup-title { font-size: clamp(16px,2.8vh,26px); margin-bottom: 8px; }
 .poke-single-matchups .poke-multiplier-groups { grid-template-columns: 1fr; grid-template-rows: repeat(3,minmax(0,1fr)); gap: 8px; flex: 1; min-height: 0; }
-.poke-single-matchups .poke-multiplier-group { display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
+.poke-single-matchups .poke-multiplier-group { min-height: 0; display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
 .poke-single-matchups .poke-multiplier-group h3 { flex: 0 0 68px; font-size: clamp(20px,3.4vh,32px); margin: 0; }
-.poke-single-matchups .poke-multiplier-group > div { gap: 6px; }
-.poke-single-matchups .poke-card-type { --type-icon-size: min(4.2vw,6.5vh,56px); }
+.poke-single-matchups .poke-multiplier-group > div { gap: 6px; flex: 1; min-width: 0; min-height: 0; align-self: stretch; align-content: center; }
+.poke-single-matchups .poke-card-type { --type-icon-size: var(--matchup-icon-size,min(6vw,11vh)); }
 @container (max-width: 1000px) {
-  .poke-single-matchups .poke-card-type { --type-icon-size: min(3.4cqw,6cqh,40px); }
   .poke-single-matchups .poke-multiplier-group { gap: 6px; padding: 6px; }
   .poke-single-matchups .poke-multiplier-group h3 { flex-basis: 54px; }
 }

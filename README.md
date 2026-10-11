@@ -251,3 +251,5 @@ Google TV 實機驗收：選活動 → 英文聽聽 → 單元 → 曲目，檢�
 Google TV / TV Bro 實機驗收：選自己的玩家 → 筆順小挑戰 → 開始，確認方向鍵能到每個選項與退出按鈕；答錯保留紅框並留在同一題，答對動畫後自動前進，長按 OK 不會穿透下一題；Back 取消後能繼續；完成 5 字並重新開啟後紀錄仍保留。請特別檢查沙發距離的字形可讀性、動畫流暢度與焦點框。
 
 遙控器導覽回歸檢查：`node navigation.test.cjs`；安裝 Playwright 與 Edge 後可執行 `node scripts/review-remote.cjs`，檢查 720p、1080p、1440p、4K 各頁面焦點可達性與屬性選單鍵碼。
+
+屬性相剋 icon 優先放大，每組依實際寬高及屬性數量自動縮小至可完整顯示的尺寸。`node scripts/check-type-layout.cjs` 驗證 540p～4K 全部 18 個屬性不需捲動、不裁切，且圖示不會無故縮小（需 Playwright 與 Edge）。

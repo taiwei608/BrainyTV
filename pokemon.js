@@ -22,6 +22,7 @@ const Pokemon = (() => {
     if (!data) { root.innerHTML='<p role="alert">資料無法載入，請重新整理頁面。</p>'; return; }
     root.innerHTML=view==='home'?home():view==='types'?types():view==='dex'?library():detail();
     root.scrollTop=0;
+    if(view==='types')fitMatchupIcons();
     if(focus) {
       if(view==='types')focusMatchup();
       else requestAnimationFrame(()=>focusFirst(root));
@@ -30,6 +31,29 @@ const Pokemon = (() => {
   function home() { return `<div class="poke-home">${button('✦ 屬性與相剋<br><small>18 種屬性・圖示・攻擊倍率表</small>','types')}${button('◉ 朱／紫圖鑑<br><small>編號・進化・學招・招式威力</small>','dex')}</div><p class="poke-note">包含帕底亞、北上與藍莓圖鑑，另列有朱／紫學招資料的其他寶可夢。文字與屬性圖示可離線查看，寶可夢圖片需要網路。</p><p class="poke-note">資料：PokéAPI・${esc(data.updated)} 快照。招式倍率以一般對戰屬性計算，不包含特性、道具、太晶化或特殊招式效果。</p>`; }
   function matchupGroups(valueFor, values = [2, 0.5, 0]) {
     return `<div class="poke-multiplier-groups">${values.map(value=>{const targets=data.types.filter(t=>valueFor(t.id)===value);return `<div class="poke-multiplier-group" data-multiplier="${value}"><h3>×${value}</h3><div>${targets.length?targets.map(t=>typeIcon(t.id)).join(''):'<span class="poke-empty" aria-label="無符合屬性">—</span>'}</div></div>`;}).join('')}</div>`;
+  }
+  function fitMatchupIcons() {
+    const root=$('pokemonContent');
+    if(!root.querySelectorAll)return;
+    const preferred=Math.floor(Math.min(window.innerWidth*0.06,window.innerHeight*0.11));
+    root.querySelectorAll('.poke-single-matchups .poke-multiplier-group > div').forEach(group=>{
+      const count=group.querySelectorAll('.poke-card-type').length;
+      if(!count)return;
+      const style=getComputedStyle(group), gap=parseFloat(style.gap)||0;
+      const width=group.clientWidth, height=group.clientHeight;
+      let low=1, high=Math.max(1,Math.min(preferred,width,height)), best=1;
+      while(low<=high) {
+        const size=Math.floor((low+high)/2);
+        const columns=Math.max(1,Math.floor((width+gap)/(size+gap)));
+        const rows=Math.ceil(count/columns);
+        if(rows*size+(rows-1)*gap<=height) {best=size;low=size+1;}
+        else high=size-1;
+      }
+      group.style.setProperty('--matchup-icon-size',`${best}px`);
+    });
+  }
+  if(typeof ResizeObserver!=='undefined') {
+    new ResizeObserver(()=>{if(view==='types')fitMatchupIcons();}).observe($('pokemonContent'));
   }
   function focusMatchup() {
     const target=$('pokemonContent').querySelector(`[data-poke="matchup-type"][data-value="${matchupType}"]`);
