@@ -1,6 +1,26 @@
 /* Offline reference browser. No player records are modified. */
 const Pokemon = (() => {
-  const data = window.POKEMON_DATA;
+  let data = window.POKEMON_DATA;
+  let dataLoading = null, openRequest = 0;
+  function loadData() {
+    if(data)return Promise.resolve();
+    if(dataLoading)return dataLoading;
+    dataLoading=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='pokemon-data.js?v=20261007';
+      const timer=setTimeout(()=>finish(new Error('timeout')),30000);
+      function finish(error) {
+        clearTimeout(timer);
+        script.onload=script.onerror=null;
+        if(error){script.remove();reject(error);}
+        else {data=window.POKEMON_DATA;resolve();}
+      }
+      script.onload=()=>finish(window.POKEMON_DATA?null:new Error('missing data'));
+      script.onerror=()=>finish(new Error('network'));
+      document.head.appendChild(script);
+    }).finally(()=>{dataLoading=null;});
+    return dataLoading;
+  }
   const colors = ['#a8a878','#c03028','#a890f0','#a040a0','#d6aa43','#a89832','#91a820','#705898','#9999ba','#f08030','#6890f0','#78c850','#e4be22','#f85888','#70c8c8','#7038f8','#705848','#d78aaa'];
   // PokeAPI type IDs: normal, fighting, flying, poison, ground, rock, bug,
   // ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.
@@ -96,8 +116,21 @@ const Pokemon = (() => {
     const list=p.moves.filter(m=>String(m[1])===method).sort((a,b)=>a[2]-b[2]||a[0]-b[0]); movePage=Math.min(movePage,Math.max(0,Math.ceil(list.length/8)-1));
     return heading+formButtons+`<div class="poke-toolbar">${[['1','升級'],['4','招式學習器'],['2','蛋招式'],['3','教授／其他']].map(([m,n])=>button(n,'method',m,`aria-pressed="${method===m}"`)).join('')}</div><p class="poke-note">僅列 scarlet-violet 版本資料。等級 0 代表進化時學會，等級 1 代表初始招式。威力「—」代表變化招式或威力依條件決定，不是 0 傷害。</p>${pager(list.length,8,'move-page',movePage)}<table class="poke-moves" tabindex="0" data-poke-scroll aria-label="招式資料，上下鍵捲動"><thead><tr><th>學習</th><th>招式</th><th>屬性</th><th>分類</th><th>威力</th><th>命中</th><th>PP</th></tr></thead><tbody>${list.slice(movePage*8,movePage*8+8).map(m=>{const a=data.moves[m[0]];return `<tr><td>${method==='1'?(m[2]===0?'進化':`Lv. ${m[2]}`):'—'}</td><td>${esc(a.name)}</td><td>${badge(a.type)}</td><td>${['','變化','物理','特殊'][a.category]}</td><td>${a.power??'—'}</td><td>${a.accuracy===null?'—':a.accuracy+'%'}</td><td>${a.pp}</td></tr>`;}).join('')||'<tr><td colspan="7">此型態／學習方式沒有朱／紫資料。</td></tr>'}</tbody></table>`;
   }
-  function open() { dexPage=0;view='home'; showScreen('pokemon'); render(); }
-  function back() { if(view==='home') showScreen('games');else {view=view==='detail'?'dex':'home';render();} }
+  function open() {
+    const request=++openRequest;
+    dexPage=0;view='home';showScreen('pokemon');
+    if(data){render();return;}
+    $('pokemonTitle').textContent='寶可夢專區';
+    $('pokemonBack').textContent='返回活動';
+    $('pokemonContent').innerHTML='<p role="status">正在載入寶可夢資料，首次開啟需要稍候…</p>';
+    focusWithoutScroll($('pokemonBack'));
+    loadData().then(()=>{if(request===openRequest)render();}).catch(()=>{
+      if(request!==openRequest)return;
+      $('pokemonContent').innerHTML='<p role="alert">資料載入失敗，請確認網路後重試。</p>'+button('重新載入','retry');
+      requestAnimationFrame(()=>focusFirst($('pokemonContent')));
+    });
+  }
+  function back() { ++openRequest;if(view==='home') showScreen('games');else {view=view==='detail'?'dex':'home';render();} }
   // Reference tables have no buttons in their rows. Let the remote scroll them
   // while focused, then hand navigation back to the shared focus controller.
   window.addEventListener?.('keydown',e=>{
@@ -148,6 +181,7 @@ const Pokemon = (() => {
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-poke]');if(!b)return; const action=b.dataset.poke,value=b.dataset.value;
     if(action==='back')return back();
+    if(action==='retry')return open();
     if(action==='types'||action==='dex')view=action;
     if(action==='matchup-type')matchupType=Math.max(0,Math.min(data.types.length-1,+value||0));
     if(action==='region'){dex=value;dexPage=0;}if(action==='filter'){typeFilter=value;dexPage=0;}
