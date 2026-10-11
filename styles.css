@@ -497,3 +497,40 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .poke-single-matchups .poke-multiplier-group { gap: 6px; padding: 6px; }
   .poke-single-matchups .poke-multiplier-group h3 { flex-basis: 54px; }
 }
+
+/* Keep dex controls in place and show only one complete four-card page. */
+#pokemonContent:has(.poke-dex-view) { overflow: hidden; padding: clamp(10px,1.8vh,20px); }
+.poke-dex-view { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.poke-dex-controls { flex-shrink: 0; }
+.poke-dex-controls .poke-toolbar { margin-bottom: 8px; }
+.poke-dex-view .poke-library { flex: 1; min-height: 0; grid-template-rows: minmax(0,1fr); }
+.poke-dex-view .poke-library .btn { min-height: 0; overflow: hidden; padding: clamp(8px,1.5vh,16px); gap: 6px; }
+.poke-dex-view .poke-thumbnail { flex: 1; min-height: 0; height: 0; width: 100%; max-width: none; aspect-ratio: auto; }
+.poke-dex-view .poke-pager { flex-shrink: 0; margin: 0; }
+@media (max-width: 900px) {
+  .poke-dex-view .poke-library { grid-template-rows: repeat(2,minmax(0,1fr)); }
+  .poke-dex-view .poke-library strong { font-size: 20px; }
+  .poke-dex-view .poke-library small { font-size: 14px; }
+}
+
+.poke-dex-position { flex-shrink: 0; text-align: center; color: var(--text-soft); font-size: 16px; }
+
+/* Expand all 18 dex type icons evenly across the fixed filter row. */
+.poke-dex-view .poke-filter-toolbar {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: 50px 96px repeat(18,minmax(0,1fr));
+  gap: 4px;
+  overflow: visible;
+  width: 100%;
+}
+.poke-dex-view .poke-filter-toolbar .btn[data-poke="filter"] {
+  min-width: 0;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poke-dex-view .poke-filter-toolbar .poke-card-type {
+  --type-icon-size: max(12px,calc((100cqw - 222px) / 18 - 14px));
+}

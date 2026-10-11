@@ -4,7 +4,7 @@ const Pokemon = (() => {
   const colors = ['#a8a878','#c03028','#a890f0','#a040a0','#d6aa43','#a89832','#91a820','#705898','#9999ba','#f08030','#6890f0','#78c850','#e4be22','#f85888','#70c8c8','#7038f8','#705848','#d78aaa'];
   // PokeAPI type IDs: normal, fighting, flying, poison, ground, rock, bug,
   // ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.
-  let view = 'home', dex = '31', typeFilter = '', selected = null, movePage = 0, method = '1', tab = 'overview', matchupType = 0;
+  let view = 'home', dex = '31', typeFilter = '', selected = null, movePage = 0, dexPage = 0, method = '1', tab = 'overview', matchupType = 0;
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const button = (label, action, value = '', extra = '') => `<button class="btn secondary" data-poke="${action}" data-value="${esc(value)}" ${extra}>${label}</button>`;
@@ -69,7 +69,8 @@ const Pokemon = (() => {
   function pager(total,size,action,current) { const count=Math.max(1,Math.ceil(total/size)); return `<div class="poke-pager">${button('上一頁',action,current-1,current===0?'disabled':'')}<span>第 ${current+1} / ${count} 頁・共 ${total} 筆</span>${button('下一頁',action,current+1,current>=count-1?'disabled':'')}</div>`; }
   function library() {
     const list=entries();
-    return `<div class="poke-toolbar">${[[31,'帕底亞'],[32,'北上'],[33,'藍莓'],['all','全部／其他可用']].map(([id,n])=>button(n,'region',id,`aria-pressed="${dex===String(id)}"`)).join('')}</div><div class="poke-toolbar poke-filter-toolbar"><span>屬性：</span>${button('全部屬性','filter','',`aria-pressed="${!typeFilter}"`)}${data.types.map(t=>button(typeIcon(t.id),'filter',t.id,`aria-label="${esc(t.name)}屬性" aria-pressed="${typeFilter===String(t.id)}"`)).join('')}</div><div class="poke-library">${list.map(s=>{const p=(typeFilter?data.pokemon.find(p=>p.species===s.id&&p.types.includes(+typeFilter)):null)||data.pokemon.find(p=>p.species===s.id&&p.default)||data.pokemon.find(p=>p.species===s.id);return button(`<span class="poke-card-heading"><strong>${esc(s.name)}</strong><small>${dex==='all'?'全國':({31:'帕底亞',32:'北上',33:'藍莓'})[dex]} #${String(dex==='all'?s.id:s.dex.find(d=>d[0]===+dex)[1]).padStart(3,'0')}</small></span><span class="poke-card-types">${p.types.map(typeIcon).join('')}</span><img class="poke-thumbnail" width="240" height="240" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png" alt="" loading="lazy" decoding="async">`,'select',p.id);}).join('')||'<p role="status">沒有符合的寶可夢，試試切換區域或選擇全部屬性。</p>'}</div>`;
+    dexPage=Math.max(0,Math.min(dexPage,Math.ceil(list.length/4)-1));
+    return `<div class="poke-dex-view"><div class="poke-dex-controls"><div class="poke-toolbar">${[[31,'帕底亞'],[32,'北上'],[33,'藍莓'],['all','全部／其他可用']].map(([id,n])=>button(n,'region',id,`aria-pressed="${dex===String(id)}"`)).join('')}</div><div class="poke-toolbar poke-filter-toolbar"><span>屬性：</span>${button('全部屬性','filter','',`aria-pressed="${!typeFilter}"`)}${data.types.map(t=>button(typeIcon(t.id),'filter',t.id,`aria-label="${esc(t.name)}屬性" aria-pressed="${typeFilter===String(t.id)}"`)).join('')}</div></div><div class="poke-library">${list.slice(dexPage*4,dexPage*4+4).map(s=>{const p=(typeFilter?data.pokemon.find(p=>p.species===s.id&&p.types.includes(+typeFilter)):null)||data.pokemon.find(p=>p.species===s.id&&p.default)||data.pokemon.find(p=>p.species===s.id);return button(`<span class="poke-card-heading"><strong>${esc(s.name)}</strong><small>${dex==='all'?'全國':({31:'帕底亞',32:'北上',33:'藍莓'})[dex]} #${String(dex==='all'?s.id:s.dex.find(d=>d[0]===+dex)[1]).padStart(3,'0')}</small></span><span class="poke-card-types">${p.types.map(typeIcon).join('')}</span><img class="poke-thumbnail" width="240" height="240" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png" alt="" loading="lazy" decoding="async">`,'select',p.id);}).join('')||'<p role="status">沒有符合的寶可夢，試試切換區域或選擇全部屬性。</p>'}</div><div class="poke-dex-position" aria-live="polite">${list.length?`${dexPage*4+1}–${Math.min((dexPage+1)*4,list.length)} / ${list.length}`:'0 / 0'}・↑ ↓ 切換寶可夢</div></div>`;
   }
   const conditionNames={evolution_trigger_id:'方式',trigger_item_id:'使用道具',minimum_level:'最低等級',gender_id:'性別',location_id:'地點',held_item_id:'攜帶道具',time_of_day:'時段',known_move_id:'已學會招式',known_move_type_id:'已學會招式屬性',minimum_happiness:'親密度',minimum_beauty:'美麗度',minimum_affection:'友好度',relative_physical_stats:'攻擊／防禦',party_species_id:'同行寶可夢',party_type_id:'同行屬性',trade_species_id:'交換對象',needs_overworld_rain:'下雨',turn_upside_down:'主機倒置',minimum_steps:'同行步數',minimum_damage_taken:'受到傷害',used_move_id:'使用招式',minimum_move_count:'使用次數',required_pokemon_form_id:'進化前型態',evolved_pokemon_form_id:'進化後型態',percentage_chance:'型態機率（%）',needs_multiplayer:'集友圈',region_id:'進化地區',nature_bitmask:'性格條件'};
   const triggers={'level-up':'升級',trade:'連線交換','use-item':'使用道具',shed:'隊伍有空位及精靈球','other':'特殊條件','three-critical-hits':'一場對戰命中要害 3 次','take-damage':'受到傷害後符合指定條件','spin':'旋轉角色','tower-of-darkness':'使用惡之掛軸','tower-of-waters':'使用水之掛軸','agile-style-move':'使用迅疾招式（其他世代）','strong-style-move':'使用剛猛招式（其他世代）','recoil-damage':'累積反作用力傷害後升級','use-move':'使用指定招式後升級','in-battle-level-up':'對戰中升級','three-defeated-bisharp':'打倒 3 隻帶著頭領憑證、率領駒刀小兵的劈斬司令，再升級','gimmighoul-coins':'收集 999 枚索財靈的硬幣後升級'};
@@ -95,12 +96,30 @@ const Pokemon = (() => {
     const list=p.moves.filter(m=>String(m[1])===method).sort((a,b)=>a[2]-b[2]||a[0]-b[0]); movePage=Math.min(movePage,Math.max(0,Math.ceil(list.length/8)-1));
     return heading+formButtons+`<div class="poke-toolbar">${[['1','升級'],['4','招式學習器'],['2','蛋招式'],['3','教授／其他']].map(([m,n])=>button(n,'method',m,`aria-pressed="${method===m}"`)).join('')}</div><p class="poke-note">僅列 scarlet-violet 版本資料。等級 0 代表進化時學會，等級 1 代表初始招式。威力「—」代表變化招式或威力依條件決定，不是 0 傷害。</p>${pager(list.length,8,'move-page',movePage)}<table class="poke-moves" tabindex="0" data-poke-scroll aria-label="招式資料，上下鍵捲動"><thead><tr><th>學習</th><th>招式</th><th>屬性</th><th>分類</th><th>威力</th><th>命中</th><th>PP</th></tr></thead><tbody>${list.slice(movePage*8,movePage*8+8).map(m=>{const a=data.moves[m[0]];return `<tr><td>${method==='1'?(m[2]===0?'進化':`Lv. ${m[2]}`):'—'}</td><td>${esc(a.name)}</td><td>${badge(a.type)}</td><td>${['','變化','物理','特殊'][a.category]}</td><td>${a.power??'—'}</td><td>${a.accuracy===null?'—':a.accuracy+'%'}</td><td>${a.pp}</td></tr>`;}).join('')||'<tr><td colspan="7">此型態／學習方式沒有朱／紫資料。</td></tr>'}</tbody></table>`;
   }
-  function open() { view='home'; showScreen('pokemon'); render(); }
+  function open() { dexPage=0;view='home'; showScreen('pokemon'); render(); }
   function back() { if(view==='home') showScreen('games');else {view=view==='detail'?'dex':'home';render();} }
   // Reference tables have no buttons in their rows. Let the remote scroll them
   // while focused, then hand navigation back to the shared focus controller.
   window.addEventListener?.('keydown',e=>{
     const active=document.activeElement, direction=remoteKey(e);
+    if(view==='dex' && active?.matches('[data-poke="select"]') && (direction==='up'||direction==='down')) {
+      const lastPage=Math.max(0,Math.ceil(entries().length/4)-1);
+      // At the beginning, Up returns to the fixed type filters.
+      if(direction==='up' && dexPage===0)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const next=Math.max(0,Math.min(lastPage,dexPage+(direction==='down'?1:-1)));
+      if(next===dexPage)return;
+      const cards=Array.from($('pokemonContent').querySelectorAll('[data-poke="select"]'));
+      const column=Math.max(0,cards.indexOf(active));
+      dexPage=next;
+      render(false);
+      requestAnimationFrame(()=>{
+        const targets=$('pokemonContent').querySelectorAll('[data-poke="select"]');
+        const target=targets[Math.min(column,targets.length-1)];
+        if(target)focusWithoutScroll(target);
+      });
+      return;
+    }
     if(view==='types' && active?.matches('[data-poke="matchup-type"]')) {
       if(direction==='left'||direction==='right') {
         e.preventDefault();e.stopImmediatePropagation();
@@ -131,7 +150,7 @@ const Pokemon = (() => {
     if(action==='back')return back();
     if(action==='types'||action==='dex')view=action;
     if(action==='matchup-type')matchupType=Math.max(0,Math.min(data.types.length-1,+value||0));
-    if(action==='region'){dex=value;}if(action==='filter'){typeFilter=value;}
+    if(action==='region'){dex=value;dexPage=0;}if(action==='filter'){typeFilter=value;dexPage=0;}
     if(action==='select'||action==='form'){selected=form(value);view='detail';movePage=0;if(action==='select')tab='overview';}
     if(action==='tab')tab=value;if(action==='method'){method=value;movePage=0;}if(action==='move-page')movePage=+value;
     render();
