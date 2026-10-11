@@ -1,0 +1,41 @@
+const {chromium}=require('playwright');const path=require('node:path');const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));
+await page.evaluate(()=>{state.players=Array.from({length:4},(_,i)=>({id:i?'remote-'+i:'remote-review',name:'導覽測試'+i,progress:{}}));state.currentPlayerId='remote-review';state.players.forEach(ensurePlayerProgress);renderHome();});
+async function audit(name,setup){await page.evaluate(setup);await page.waitForTimeout(60);const report=await page.evaluate(()=>{const root=navigationRoot(),items=focusable(root);const edges=items.map(el=>['left','right','up','down'].map(direction=>{focusWithoutScroll(el);moveFocus(direction);return items.indexOf(document.activeElement);}));const seen=new Set([0]),queue=[0];while(queue.length){for(const next of edges[queue.shift()])if(next>=0&&!seen.has(next)){seen.add(next);queue.push(next);}}return {count:items.length,unreachable:items.filter((_,i)=>!seen.has(i)).map(el=>el.textContent.trim().slice(0,50))};});if(report.unreachable.length)throw Error(`${name}: unreachable ${JSON.stringify(report)}`);assert.ok(report.count>0,name);console.log(`  ${name}: ${report.count} reachable controls`);}
+for(const [width,height] of [[1280,720],[1920,1080],[2560,1440],[3840,2160]]){await page.setViewportSize({width,height});console.log(`${width}x${height}`);
+await audit('players',()=>showScreen('players'));
+await audit('new player dialog',()=>document.querySelector('[data-action="add-player"]').click());await page.evaluate(()=>document.getElementById('playerDialog').close());
+await audit('activities',()=>showScreen('games'));
+await page.locator('[data-game="multiplication"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>document.activeElement.dataset.game),'addition');await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>document.activeElement.dataset.game),'subtraction');await page.keyboard.press('ArrowRight');assert.equal(await page.evaluate(()=>document.activeElement.dataset.game),'division');
+await page.locator('[data-game="multiplication"]').focus();await page.keyboard.press('ArrowDown');assert.equal(await page.evaluate(()=>document.activeElement.dataset.action),'open-listening');
+await audit('multiplication settings',()=>selectGame('multiplication'));
+await audit('multiplication table dialog',()=>openMultiplicationTable());await page.evaluate(()=>closeMultiplicationTable());
+await audit('addition settings',()=>selectGame('addition'));
+await audit('subtraction settings',()=>selectGame('subtraction'));
+await audit('division settings',()=>selectGame('division'));
+await audit('math answers',()=>startGame());
+await audit('math exit dialog',()=>openExitConfirmation());await page.evaluate(()=>closeExitConfirmation());
+await audit('answer feedback',()=>document.querySelector('[data-answer-value]').click());
+await audit('results',()=>finishGame());
+await audit('player management',()=>{renderManagePlayers();showScreen('manage');});
+await audit('player action confirmation',()=>showPlayerActionConfirmation('clear','remote-review'));await page.evaluate(()=>cancelPlayerAction());
+await audit('listening units',()=>Listening.open());
+await audit('listening controls',()=>document.querySelector('[data-listening-unit="1"]').click());
+await audit('pokemon home',()=>Pokemon.open());
+await page.evaluate(()=>document.querySelector('[data-poke="types"]').click());
+await page.locator('[data-poke="matchup-type"][data-value="0"]').focus();
+for(let i=0;i<18;i++){assert.equal(await page.locator('[data-poke="matchup-type"][aria-pressed="true"]').getAttribute('data-value'),String(i));await page.keyboard.press('ArrowRight');}console.log('  pokemon type menu: all 18 selections match focus');
+await page.locator('[data-poke="matchup-type"][data-value="0"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator('[data-poke="matchup-type"][aria-pressed="true"]').getAttribute('data-value'),'1');
+await page.evaluate(()=>window.dispatchEvent(new KeyboardEvent('keydown',{keyCode:22,bubbles:true})));assert.equal(await page.locator('[data-poke="matchup-type"][aria-pressed="true"]').getAttribute('data-value'),'2');
+await audit('pokemon dex',()=>{Pokemon.back();document.querySelector('[data-poke="dex"]').click();});
+await audit('pokemon overview',()=>(document.querySelector('[data-poke="select"][data-value="25"]')||document.querySelector('[data-poke="select"]')).click());
+await audit('pokemon moves',()=>document.querySelector('[data-poke="tab"][data-value="moves"]').click());
+await audit('pokemon evolution',()=>document.querySelector('[data-poke="tab"][data-value="evolution"]').click());
+await audit('stroke intro',()=>StrokeGame.open());
+await audit('stroke answers',()=>document.querySelector('[data-stroke-action="start"]').click());
+await audit('stroke exit dialog',()=>StrokeGame.handleBack());await page.evaluate(()=>StrokeGame.closeExit());
+await audit('stroke results',()=>showScreen('strokeResult'));
+await page.evaluate(()=>showScreen('players'));
+}
+assert.deepEqual(errors,[]);await browser.close();console.log('PASS: full-site directional reachability, activity row/column and standard/Android type keys.');})().catch(e=>{console.error(e);process.exit(1)});
+

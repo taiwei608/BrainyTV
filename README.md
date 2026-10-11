@@ -117,7 +117,7 @@
 
 主要支援：
 
-- 上、下、左、右：移動焦點
+- 上、下、左、右：依畫面位置移動焦點，優先選同一排／同一欄的按鈕；沒有對齊項目時才選方向相符的斜向按鈕，邊界停留原處。寶可夢屬性選單左右鍵會直接更新資訊。
 - OK / Enter：確認
 - Back / Escape：返回上一層；遊戲進行中會開啟離開確認
 
@@ -249,3 +249,5 @@ Google TV 實機驗收：選活動 → 英文聽聽 → 單元 → 曲目，檢�
 驗證命令：`node stroke-game.test.cjs`、`node listening.test.cjs`。字庫可用 `node scripts/build-stroke-data.cjs` 重建。
 
 Google TV / TV Bro 實機驗收：選自己的玩家 → 筆順小挑戰 → 開始，確認方向鍵能到每個選項與退出按鈕；答錯保留紅框並留在同一題，答對動畫後自動前進，長按 OK 不會穿透下一題；Back 取消後能繼續；完成 5 字並重新開啟後紀錄仍保留。請特別檢查沙發距離的字形可讀性、動畫流暢度與焦點框。
+
+遙控器導覽回歸檢查：`node navigation.test.cjs`；安裝 Playwright 與 Edge 後可執行 `node scripts/review-remote.cjs`，檢查 720p、1080p、1440p、4K 各頁面焦點可達性與屬性選單鍵碼。

@@ -908,7 +908,7 @@ function totalPlayerPlays(player) {
 
 function focusable(root = document) {
   return [...root.querySelectorAll('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')]
-    .filter(el => !el.closest('.hidden') && el.offsetParent !== null);
+    .filter(el => !el.closest('.hidden, [hidden], [inert], [aria-hidden="true"]') && !el.disabled && el.offsetParent !== null && el.getClientRects().length > 0);
 }
 
 function focusFirst(root = document) {
@@ -940,29 +940,40 @@ function navigationRoot() {
   return Object.values(screens).find(screen => screen.classList.contains('active')) || document;
 }
 
+// Prefer controls in the same visual row/column. Center distance alone can
+// mistake a wide card below the current control for a closer right-hand card.
+function directionalTarget(rect, candidates, direction) {
+  const horizontal = direction === 'left' || direction === 'right';
+  const forward = direction === 'right' || direction === 'down';
+  const start = horizontal ? 'left' : 'top', end = horizontal ? 'right' : 'bottom';
+  const crossStart = horizontal ? 'top' : 'left', crossEnd = horizontal ? 'bottom' : 'right';
+  const center = r => (r[start] + r[end]) / 2;
+  const crossCenter = r => (r[crossStart] + r[crossEnd]) / 2;
+  return candidates.map(({el, rect:r}, index) => {
+    const advance = (center(r) - center(rect)) * (forward ? 1 : -1);
+    if (advance <= 8) return null;
+    const overlap = Math.min(rect[crossEnd], r[crossEnd]) - Math.max(rect[crossStart], r[crossStart]);
+    const aligned = overlap > Math.min(rect[crossEnd]-rect[crossStart],r[crossEnd]-r[crossStart]) * 0.2;
+    // Exclude controls wholly above/below for horizontal movement unless
+    // their near edge actually lies beyond the current left/right edge.
+    const gap = forward ? r[start] - rect[end] : rect[start] - r[end];
+    if (!aligned && gap < -2) return null;
+    const crossGap = Math.max(0, -overlap);
+    if (!aligned && crossGap > advance) return null;
+    return {el, aligned, score: Math.max(0,gap) + crossGap * 2.4,
+      cross: Math.abs(crossCenter(r)-crossCenter(rect)), advance, index};
+  }).filter(Boolean).sort((a,b) => Number(b.aligned)-Number(a.aligned) ||
+    a.score-b.score || a.cross-b.cross || a.advance-b.advance || a.index-b.index)[0]?.el;
+}
+
 function moveFocus(direction) {
   const root = navigationRoot();
   const items = focusable(root);
   const current = document.activeElement;
   if (!items.includes(current)) return focusFirst(root);
-  const rect = current.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-
-  const candidates = items.filter(el => el !== current).map(el => {
-    const r = el.getBoundingClientRect();
-    const x = r.left + r.width / 2;
-    const y = r.top + r.height / 2;
-    const dx = x - cx;
-    const dy = y - cy;
-    const valid = direction === 'left' ? dx < -8 : direction === 'right' ? dx > 8 : direction === 'up' ? dy < -8 : dy > 8;
-    if (!valid) return null;
-    const primary = (direction === 'left' || direction === 'right') ? Math.abs(dx) : Math.abs(dy);
-    const cross = (direction === 'left' || direction === 'right') ? Math.abs(dy) : Math.abs(dx);
-    return { el, score: primary + cross * 2.4 };
-  }).filter(Boolean).sort((a,b) => a.score - b.score);
-
-  if (candidates[0]) focusWithoutScroll(candidates[0].el);
+  const target = directionalTarget(current.getBoundingClientRect(),
+    items.filter(el => el !== current).map(el => ({el, rect:el.getBoundingClientRect()})), direction);
+  if (target) focusWithoutScroll(target);
 }
 
 function remoteKey(event) {

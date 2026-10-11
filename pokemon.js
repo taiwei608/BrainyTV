@@ -22,7 +22,10 @@ const Pokemon = (() => {
     if (!data) { root.innerHTML='<p role="alert">資料無法載入，請重新整理頁面。</p>'; return; }
     root.innerHTML=view==='home'?home():view==='types'?types():view==='dex'?library():detail();
     root.scrollTop=0;
-    if(focus) requestAnimationFrame(()=>view==='types'?focusMatchup():focusFirst(root));
+    if(focus) {
+      if(view==='types')focusMatchup();
+      else requestAnimationFrame(()=>focusFirst(root));
+    }
   }
   function home() { return `<div class="poke-home">${button('✦ 屬性與相剋<br><small>18 種屬性・圖示・攻擊倍率表</small>','types')}${button('◉ 朱／紫圖鑑<br><small>編號・進化・學招・招式威力</small>','dex')}</div><p class="poke-note">包含帕底亞、北上與藍莓圖鑑，另列有朱／紫學招資料的其他寶可夢。文字與屬性圖示可離線查看，寶可夢圖片需要網路。</p><p class="poke-note">資料：PokéAPI・${esc(data.updated)} 快照。招式倍率以一般對戰屬性計算，不包含特性、道具、太晶化或特殊招式效果。</p>`; }
   function matchupGroups(valueFor, values = [2, 0.5, 0]) {
@@ -73,22 +76,32 @@ const Pokemon = (() => {
   // Reference tables have no buttons in their rows. Let the remote scroll them
   // while focused, then hand navigation back to the shared focus controller.
   window.addEventListener?.('keydown',e=>{
-    const active=document.activeElement;
+    const active=document.activeElement, direction=remoteKey(e);
     if(view==='types' && active?.matches('[data-poke="matchup-type"]')) {
-      if(['ArrowLeft','ArrowRight','Left','Right'].includes(e.key)) {
+      if(direction==='left'||direction==='right') {
         e.preventDefault();e.stopImmediatePropagation();
-        matchupType=(matchupType+(['ArrowRight','Right'].includes(e.key)?1:-1)+data.types.length)%data.types.length;
+        matchupType=(matchupType+(direction==='right'?1:-1)+data.types.length)%data.types.length;
         render();
-      } else if(['ArrowDown','Down'].includes(e.key)) {
+      } else if(direction==='down') {
         e.preventDefault();e.stopImmediatePropagation();
       }
       return;
     }
     if(!document.activeElement?.matches('[data-poke-scroll]'))return;
-    const root=$('pokemonContent'), step=e.key==='ArrowDown'?110:e.key==='ArrowUp'?-110:0;
+    const root=$('pokemonContent'), step=direction==='down'?110:direction==='up'?-110:0;
     if(!step || (step>0&&root.scrollTop+root.clientHeight>=root.scrollHeight-2)||(step<0&&root.scrollTop<=0))return;
     e.preventDefault();e.stopImmediatePropagation();root.scrollTop+=step;
   },{capture:true});
+  // Spatial navigation from the header can focus any icon. Keep the shown
+  // matchup synchronized with that icon, even before OK is pressed.
+  document.addEventListener('focusin',e=>{
+    const b=e.target.closest('[data-poke="matchup-type"]');
+    if(view!=='types'||!b)return;
+    const next=+b.dataset.value;
+    if(next===matchupType)return;
+    matchupType=next;
+    render();
+  });
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-poke]');if(!b)return; const action=b.dataset.poke,value=b.dataset.value;
     if(action==='back')return back();

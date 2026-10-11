@@ -1,0 +1,15 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('app.js','utf8');const context=vm.createContext({});vm.runInContext(source.slice(source.indexOf('function directionalTarget('),source.indexOf('function moveFocus(')),context);
+const rect=(left,top,width,height)=>({left,top,right:left+width,bottom:top+height});
+const target=(current,items,direction)=>context.directionalTarget(current,items.map(([el,r])=>({el,rect:r})),direction);
+const current=rect(0,0,900,130), right=rect(920,0,900,130), below=rect(0,170,1220,130);
+assert.equal(target(current,[['english',below],['addition',right]],'right'),'addition');
+assert.equal(target(current,[['english',below]],'right'),undefined);
+assert.equal(target(current,[['english',below],['addition',right]],'down'),'english');
+assert.equal(target(right,[['multiplication',current],['english',below]],'left'),'multiplication');
+assert.equal(target(below,[['multiplication',current],['addition',right]],'up'),'multiplication');
+assert.equal(target(rect(0,0,100,60),[['diagonal',rect(120,80,100,60)]],'right'),'diagonal');
+assert.equal(target(rect(120,80,100,60),[['diagonal',rect(0,0,100,60)]],'up'),'diagonal');
+assert.equal(target(current,[],'right'),undefined);
+assert.equal(target(rect(0,500,100,60),[['farAbove',rect(120,0,100,60)]],'right'),undefined);
+console.log('PASS: aligned rows/columns take priority, overlapping off-axis cards excluded, diagonal fallback and screen edges.');

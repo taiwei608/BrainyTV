@@ -7,6 +7,7 @@ let screen;
 const context = vm.createContext({window:{addEventListener(name,fn){events['window-'+name]=fn;}}, document:{getElementById(id){if(!elements.has(id))elements.set(id,{innerHTML:'',textContent:'',scrollTop:0,querySelector(){return null;}});return elements.get(id);},addEventListener(name,fn){events[name]=fn;}},requestAnimationFrame:fn=>fn(),focusFirst(){},focusWithoutScroll(){},showScreen:s=>screen=s});
 vm.runInContext(fs.readFileSync('pokemon-data.js','utf8'),context);
 vm.runInContext(fs.readFileSync('pokemon.js','utf8')+'\nthis.PokemonTest = Pokemon;',context);
+vm.runInContext(fs.readFileSync('app.js','utf8').match(/function remoteKey\(event\) \{[\s\S]*?\n\}/)[0],context);
 const data=context.window.POKEMON_DATA, api=context.PokemonTest;
 const html=()=>elements.get('pokemonContent').innerHTML;
 function click(action,value=''){events.click({target:{closest(){return {dataset:{poke:action,value:String(value)}};}}});}
@@ -30,10 +31,14 @@ const selector={matches:s=>s==='[data-poke="matchup-type"]'};
 typePanel.querySelector=()=>selector;
 context.focusWithoutScroll=el=>{context.document.activeElement=el;};
 click('matchup-type',9);assert.match(html(),/aria-label="火屬性相剋/);
-function arrow(key){let consumed=false;events['window-keydown']({key,preventDefault(){},stopImmediatePropagation(){consumed=true;}});return consumed;}
+function arrow(key,keyCode){let consumed=false;events['window-keydown']({key,keyCode,preventDefault(){},stopImmediatePropagation(){consumed=true;}});return consumed;}
 assert.ok(arrow('ArrowRight'));assert.match(html(),/aria-label="水屬性相剋/);
 assert.ok(arrow('ArrowLeft'));assert.match(html(),/aria-label="火屬性相剋/);
 assert.ok(arrow('ArrowDown'));assert.match(html(),/aria-label="火屬性相剋/);
+assert.ok(arrow('',22));assert.match(html(),/aria-label="水屬性相剋/);
+assert.ok(arrow('',21));assert.match(html(),/aria-label="火屬性相剋/);
+assert.ok(arrow('',20));assert.match(html(),/aria-label="火屬性相剋/);
+events.focusin({target:{closest(){return {dataset:{value:'12'}};}}});assert.match(html(),/aria-label="電屬性相剋/);
 click('matchup-type',0);arrow('ArrowLeft');assert.match(html(),/18 \/ 18/);arrow('ArrowRight');assert.match(html(),/1 \/ 18/);
 for(let i=0;i<18;i++){click('matchup-type',i);assert.equal((html().match(/data-multiplier=/g)||[]).length,6);assert.match(html(),new RegExp(`aria-label="${data.types[i].name}屬性相剋`));}
 typePanel.querySelector=()=>null;
