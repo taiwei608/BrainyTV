@@ -4,7 +4,7 @@ const Pokemon = (() => {
   const colors = ['#a8a878','#c03028','#a890f0','#a040a0','#d6aa43','#a89832','#91a820','#705898','#9999ba','#f08030','#6890f0','#78c850','#e4be22','#f85888','#70c8c8','#7038f8','#705848','#d78aaa'];
   // PokeAPI type IDs: normal, fighting, flying, poison, ground, rock, bug,
   // ghost, steel, fire, water, grass, electric, psychic, ice, dragon, dark, fairy.
-  let view = 'home', dex = '31', typeFilter = '', selected = null, movePage = 0, method = '1', tab = 'overview';
+  let view = 'home', dex = '31', typeFilter = '', selected = null, movePage = 0, method = '1', tab = 'overview', matchupType = 0;
   const $ = id => document.getElementById(id);
   const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const button = (label, action, value = '', extra = '') => `<button class="btn secondary" data-poke="${action}" data-value="${esc(value)}" ${extra}>${label}</button>`;
@@ -22,11 +22,19 @@ const Pokemon = (() => {
     if (!data) { root.innerHTML='<p role="alert">資料無法載入，請重新整理頁面。</p>'; return; }
     root.innerHTML=view==='home'?home():view==='types'?types():view==='dex'?library():detail();
     root.scrollTop=0;
-    if(focus) requestAnimationFrame(()=>view==='types'?focusWithoutScroll($('pokemonBack')):focusFirst(root));
+    if(focus) requestAnimationFrame(()=>view==='types'?focusMatchup():focusFirst(root));
   }
   function home() { return `<div class="poke-home">${button('✦ 屬性與相剋<br><small>18 種屬性・圖示・攻擊倍率表</small>','types')}${button('◉ 朱／紫圖鑑<br><small>編號・進化・學招・招式威力</small>','dex')}</div><p class="poke-note">包含帕底亞、北上與藍莓圖鑑，另列有朱／紫學招資料的其他寶可夢。文字與屬性圖示可離線查看，寶可夢圖片需要網路。</p><p class="poke-note">資料：PokéAPI・${esc(data.updated)} 快照。招式倍率以一般對戰屬性計算，不包含特性、道具、太晶化或特殊招式效果。</p>`; }
+  function matchupGroups(valueFor, values = [2, 0.5, 0]) {
+    return `<div class="poke-multiplier-groups">${values.map(value=>{const targets=data.types.filter(t=>valueFor(t.id)===value);return `<div class="poke-multiplier-group" data-multiplier="${value}"><h3>×${value}</h3><div>${targets.length?targets.map(t=>typeIcon(t.id)).join(''):'<span class="poke-empty" aria-label="無符合屬性">—</span>'}</div></div>`;}).join('')}</div>`;
+  }
+  function focusMatchup() {
+    const target=$('pokemonContent').querySelector(`[data-poke="matchup-type"][data-value="${matchupType}"]`);
+    if(target)focusWithoutScroll(target);
+  }
   function types() {
-    return `<p class="poke-note">每張表顯示該屬性攻擊其他屬性的倍數。用上下鍵往下看全部 18 種屬性。</p><div class="poke-type-chart">${data.types.map(a=>`<section class="poke-type-row" tabindex="0" data-poke-scroll aria-label="${a.name}屬性攻擊倍率，上下鍵捲動"><h2>${badge(a.id)} 攻擊其他屬性</h2><div class="poke-multiplier-groups">${[[2,'效果絕佳'],[0.5,'效果不好'],[0,'無效'],[1,'一般效果']].map(([value,label])=>{const targets=data.types.filter(b=>multiplier(a.id,b.id)===value);return `<div class="poke-multiplier-group" data-multiplier="${value}"><h3>×${value} <small>${label}</small></h3><div>${targets.length?targets.map(b=>badge(b.id)).join(' '):'<span class="poke-note">無</span>'}</div></div>`;}).join('')}</div></section>`).join('')}</div>`;
+    const a=data.types[matchupType];
+    return `<div class="poke-type-view"><div class="poke-type-picker" role="group" aria-label="左右鍵選擇屬性">${data.types.map((t,i)=>button(typeIcon(t.id),'matchup-type',i,`aria-label="${esc(t.name)}屬性" aria-pressed="${i===matchupType}"`)).join('')}</div><section class="poke-type-row poke-single-type" aria-label="${esc(a.name)}屬性相剋" aria-live="polite"><h2>${typeIcon(a.id)}<span class="poke-type-position">${matchupType+1} / ${data.types.length}</span></h2><div class="poke-single-matchups"><div class="poke-matchup-section"><h3 class="poke-matchup-title">攻擊這些屬性</h3>${matchupGroups(id=>multiplier(a.id,id))}</div><div class="poke-matchup-section poke-defense"><h3 class="poke-matchup-title">被這些屬性攻擊</h3>${matchupGroups(id=>multiplier(id,a.id))}</div></div></section></div>`;
   }
   function entries() {
     return data.species.filter(s=>(dex==='all'||s.dex.some(d=>d[0]===+dex))&&(!typeFilter||data.pokemon.some(p=>p.species===s.id&&p.types.includes(+typeFilter)))).sort((a,b)=>dex==='all'?a.id-b.id:(a.dex.find(d=>d[0]===+dex)?.[1]||0)-(b.dex.find(d=>d[0]===+dex)?.[1]||0));
@@ -55,7 +63,7 @@ const Pokemon = (() => {
     const p=selected,s=species(p.species),variants=data.pokemon.filter(f=>f.species===s.id);
     const heading=`<div class="poke-toolbar">${['overview','evolution','moves'].map((t,i)=>button(['基本資料','怎麼進化','學招與威力'][i],'tab',t,`aria-pressed="${tab===t}"`)).join('')}</div>`;
     const formButtons=variants.length>1?`<div class="poke-toolbar"><span>型態：</span>${variants.map(f=>button(esc(formLabel(f)||'一般型態'),'form',f.id,`aria-pressed="${f.id===p.id}"`)).join('')}</div>`:'';
-    if(tab==='overview') return heading+formButtons+`<div class="poke-overview"><img width="240" height="240" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png" alt="${esc(title(p))}" loading="lazy"><div><h2>${esc(title(p))}</h2><p>全國 #${String(s.id).padStart(4,'0')} ${s.dex.map(d=>`／${({31:'帕底亞',32:'北上',33:'藍莓'})[d[0]]} #${d[1]}`).join(' ')}</p><p>${p.types.map(badge).join(' ')}</p><p>特性：${p.abilities.map(a=>`${esc(a[0])}${a[1]?'（隱藏）':''}`).join('、')}</p><div class="poke-results" tabindex="0" data-poke-scroll aria-label="屬性或能力資料，上下鍵捲動">${p.stats.map((n,i)=>`<div>${['HP','攻擊','防禦','特攻','特防','速度'][i]} <strong>${n}</strong></div>`).join('')}</div></div></div><h2>防守弱點與抗性</h2><div class="poke-results" tabindex="0" data-poke-scroll aria-label="屬性或能力資料，上下鍵捲動">${data.types.map(t=>`<div>${badge(t.id)} <strong>×${multiplier(t.id,p.types[0],p.types[1])}</strong></div>`).join('')}</div>`;
+    if(tab==='overview') return heading+formButtons+`<div class="poke-overview"><img width="240" height="240" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png" alt="${esc(title(p))}" loading="lazy"><div><h2>${esc(title(p))}</h2><p>全國 #${String(s.id).padStart(4,'0')} ${s.dex.map(d=>`／${({31:'帕底亞',32:'北上',33:'藍莓'})[d[0]]} #${d[1]}`).join(' ')}</p><p>${p.types.map(badge).join(' ')}</p><p>特性：${p.abilities.map(a=>`${esc(a[0])}${a[1]?'（隱藏）':''}`).join('、')}</p><div class="poke-results" tabindex="0" data-poke-scroll aria-label="屬性或能力資料，上下鍵捲動">${p.stats.map((n,i)=>`<div>${['HP','攻擊','防禦','特攻','特防','速度'][i]} <strong>${n}</strong></div>`).join('')}</div></div></div><h2>被這些屬性攻擊</h2><div class="poke-type-row" tabindex="0" data-poke-scroll aria-label="防守弱點與抗性，上下鍵捲動">${matchupGroups(id=>multiplier(id,p.types[0],p.types[1]),[4,2,0.5,0.25,0].filter(value=>data.types.some(t=>multiplier(t.id,p.types[0],p.types[1])===value)))}</div>`;
     if(tab==='evolution') return heading+`<h2>進化家族</h2><div class="poke-evolution">${data.evolution.filter(e=>e.chain===s.chain).map(e=>{const parent=data.evolution.find(a=>a.id===e.parent);const target=data.pokemon.find(f=>f.species===e.id&&f.default);return `<section>${evolutionNotes[e.id]?`<p class="poke-note">${evolutionNotes[e.id]}</p>`:""}<h3>${parent?esc(parent.name)+' → ':''}${esc(e.name)}</h3>${e.parent?`<p>${e.conditions.map(condition).join('<br>或：')||'進化條件未收錄'}</p>`:'<p>家族起點</p>'}${target?button('查看 '+esc(e.name),'select',target.id):''}</section>`;}).join('')}</div><p class="poke-note">不同型態可能有不同進化方法，請留意進化前型態及進化地區。阿羅拉／洗翠等地區限定進化需從其他遊戲傳入，不能在朱／紫直接完成。來源未列條件不代表無法進化。</p>`;
     const list=p.moves.filter(m=>String(m[1])===method).sort((a,b)=>a[2]-b[2]||a[0]-b[0]); movePage=Math.min(movePage,Math.max(0,Math.ceil(list.length/8)-1));
     return heading+formButtons+`<div class="poke-toolbar">${[['1','升級'],['4','招式學習器'],['2','蛋招式'],['3','教授／其他']].map(([m,n])=>button(n,'method',m,`aria-pressed="${method===m}"`)).join('')}</div><p class="poke-note">僅列 scarlet-violet 版本資料。等級 0 代表進化時學會，等級 1 代表初始招式。威力「—」代表變化招式或威力依條件決定，不是 0 傷害。</p>${pager(list.length,8,'move-page',movePage)}<table class="poke-moves" tabindex="0" data-poke-scroll aria-label="招式資料，上下鍵捲動"><thead><tr><th>學習</th><th>招式</th><th>屬性</th><th>分類</th><th>威力</th><th>命中</th><th>PP</th></tr></thead><tbody>${list.slice(movePage*8,movePage*8+8).map(m=>{const a=data.moves[m[0]];return `<tr><td>${method==='1'?(m[2]===0?'進化':`Lv. ${m[2]}`):'—'}</td><td>${esc(a.name)}</td><td>${badge(a.type)}</td><td>${['','變化','物理','特殊'][a.category]}</td><td>${a.power??'—'}</td><td>${a.accuracy===null?'—':a.accuracy+'%'}</td><td>${a.pp}</td></tr>`;}).join('')||'<tr><td colspan="7">此型態／學習方式沒有朱／紫資料。</td></tr>'}</tbody></table>`;
@@ -65,6 +73,17 @@ const Pokemon = (() => {
   // Reference tables have no buttons in their rows. Let the remote scroll them
   // while focused, then hand navigation back to the shared focus controller.
   window.addEventListener?.('keydown',e=>{
+    const active=document.activeElement;
+    if(view==='types' && active?.matches('[data-poke="matchup-type"]')) {
+      if(['ArrowLeft','ArrowRight','Left','Right'].includes(e.key)) {
+        e.preventDefault();e.stopImmediatePropagation();
+        matchupType=(matchupType+(['ArrowRight','Right'].includes(e.key)?1:-1)+data.types.length)%data.types.length;
+        render();
+      } else if(['ArrowDown','Down'].includes(e.key)) {
+        e.preventDefault();e.stopImmediatePropagation();
+      }
+      return;
+    }
     if(!document.activeElement?.matches('[data-poke-scroll]'))return;
     const root=$('pokemonContent'), step=e.key==='ArrowDown'?110:e.key==='ArrowUp'?-110:0;
     if(!step || (step>0&&root.scrollTop+root.clientHeight>=root.scrollHeight-2)||(step<0&&root.scrollTop<=0))return;
@@ -74,6 +93,7 @@ const Pokemon = (() => {
     const b=e.target.closest('[data-poke]');if(!b)return; const action=b.dataset.poke,value=b.dataset.value;
     if(action==='back')return back();
     if(action==='types'||action==='dex')view=action;
+    if(action==='matchup-type')matchupType=Math.max(0,Math.min(data.types.length-1,+value||0));
     if(action==='region'){dex=value;}if(action==='filter'){typeFilter=value;}
     if(action==='select'||action==='form'){selected=form(value);view='detail';movePage=0;if(action==='select')tab='overview';}
     if(action==='tab')tab=value;if(action==='method'){method=value;movePage=0;}if(action==='move-page')movePage=+value;

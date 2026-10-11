@@ -19,10 +19,25 @@ assert.equal(api.multiplier(10,11,16),0.25);
 assert.equal(api.multiplier(10,12,12),2);
 for(const p of data.pokemon){assert.ok(!p.slug.includes('-mega')&&!p.slug.includes('-gmax'));assert.ok(data.species.some(s=>s.id===p.species));assert.equal(p.stats.length,6);for(const m of p.moves)assert.ok(data.moves[m[0]]);}
 api.open(); assert.equal(screen,'pokemon');assert.match(html(),/屬性與相剋/);
-click('types');assert.equal((html().match(/class="poke-type-row"/g)||[]).length,18);
-assert.equal((html().match(/data-multiplier=/g)||[]).length,72);
+click('types');assert.equal((html().match(/class="poke-type-row poke-single-type"/g)||[]).length,1);
+assert.equal((html().match(/data-multiplier=/g)||[]).length,6);
 assert.doesNotMatch(html(),/data-poke="(?:attack|defense|second)"/);
-assert.match(html(),/×0.5/);assert.match(html(),/×0 /);api.back();
+assert.match(html(),/×0.5/);assert.match(html(),/×0<\/h3>/);assert.doesNotMatch(html(),/data-multiplier="1"|class="poke-type"/);assert.match(html(),/被這些屬性攻擊/);
+assert.equal((html().match(/data-poke="matchup-type"/g)||[]).length,18);
+assert.doesNotMatch(html(),/matchup-step|data-type-page|data-poke-scroll/);
+const typePanel=elements.get('pokemonContent');
+const selector={matches:s=>s==='[data-poke="matchup-type"]'};
+typePanel.querySelector=()=>selector;
+context.focusWithoutScroll=el=>{context.document.activeElement=el;};
+click('matchup-type',9);assert.match(html(),/aria-label="火屬性相剋/);
+function arrow(key){let consumed=false;events['window-keydown']({key,preventDefault(){},stopImmediatePropagation(){consumed=true;}});return consumed;}
+assert.ok(arrow('ArrowRight'));assert.match(html(),/aria-label="水屬性相剋/);
+assert.ok(arrow('ArrowLeft'));assert.match(html(),/aria-label="火屬性相剋/);
+assert.ok(arrow('ArrowDown'));assert.match(html(),/aria-label="火屬性相剋/);
+click('matchup-type',0);arrow('ArrowLeft');assert.match(html(),/18 \/ 18/);arrow('ArrowRight');assert.match(html(),/1 \/ 18/);
+for(let i=0;i<18;i++){click('matchup-type',i);assert.equal((html().match(/data-multiplier=/g)||[]).length,6);assert.match(html(),new RegExp(`aria-label="${data.types[i].name}屬性相剋`));}
+typePanel.querySelector=()=>null;
+api.back();
 click('dex');assert.equal((html().match(/data-poke="select"/g)||[]).length,400);assert.match(html(),/新葉喵/);
 assert.equal((html().match(/data-poke="select"/g)||[]).length,400);
 assert.equal((html().match(/class="poke-thumbnail"/g)||[]).length,400);

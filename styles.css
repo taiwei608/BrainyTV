@@ -25,7 +25,7 @@
 .poke-home small { font-size: 20px; }
 .poke-type { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; background: var(--type-color); color: #101827; font-weight: 900; padding: 5px 12px; border-radius: 999px; font-size: 18px; }
 .poke-type span { background: rgba(255,255,255,.4); border-radius: 50%; display: inline-grid; place-items: center; width: 28px; height: 28px; }
-.poke-type .poke-type-symbol { background-size: 140px 28px; background-position: -5px center; background-repeat: no-repeat; border-radius: 0; }
+.poke-type .poke-type-symbol { background-size: 140px 28px; background-position: -7px center; background-repeat: no-repeat; border-radius: 0; }
 .poke-icon-reference { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 16px; margin-bottom: 24px; }
 .poke-icon-reference img { display: block; width: 100%; max-width: 200px; height: auto; margin-bottom: 6px; }
 .poke-type-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; margin-bottom: 24px; }
@@ -40,14 +40,14 @@
 .poke-filter-toolbar > * { flex-shrink: 0; }
 .poke-filter-toolbar .btn[data-poke="filter"] { font-size: 16px; padding: 6px 8px; white-space: nowrap; }
 .poke-filter-toolbar .btn[data-poke="filter"]:not([data-value=""]) { padding: 5px; }
-.poke-filter-toolbar .poke-card-type { width: 24px; height: 24px; background-size: 120px 24px; background-position: -4px center; }
+.poke-filter-toolbar .poke-card-type { --type-icon-size: 24px; }
 .poke-pager { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 18px 0; }
 .poke-pager .btn { font-size: 20px; padding: 12px 22px; }
 .poke-library { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; }
 .poke-library .btn { padding: 16px; display: flex; align-items: start; flex-direction: column; gap: 8px; text-align: left; min-width: 0; }
 .poke-card-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; width: 100%; }
 .poke-card-types { display: flex; gap: 6px; }
-.poke-card-type { display: inline-block; flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background-color: var(--type-color); background-size: 140px 28px; background-position: -5px center; background-repeat: no-repeat; }
+.poke-card-type { --type-icon-size: 28px; display: inline-block; flex-shrink: 0; width: var(--type-icon-size); height: var(--type-icon-size); border-radius: 16%; background-color: var(--type-color); background-size: calc(var(--type-icon-size) * 5) var(--type-icon-size); background-position: calc(var(--type-icon-size) * -0.25) center; background-repeat: no-repeat; }
 .poke-thumbnail { align-self: center; margin-top: auto; width: 100%; max-width: 240px; height: auto; aspect-ratio: 1; object-fit: contain; image-rendering: pixelated; }
 .poke-library strong { font-size: 26px; }
 .poke-library small { font-size: 18px; color: #cbd5e1; }
@@ -63,12 +63,20 @@
 .poke-moves th { color: #93c5fd; }
 .poke-type-chart { display: grid; gap: 22px; }
 .poke-type-row { padding: 22px; border: 1px solid #475569; border-radius: 20px; background: #17243b; }
-.poke-type-row h2 { margin-bottom: 18px; font-size: 28px; }
-.poke-multiplier-groups { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; }
-.poke-multiplier-group h3 { margin: 0 0 12px; font-size: 30px; color: #fde68a; }
-.poke-multiplier-group h3 small { font-size: 18px; color: #cbd5e1; }
-.poke-multiplier-group > div { display: flex; flex-wrap: wrap; gap: 8px; }
-@media (max-width: 850px) { .poke-multiplier-groups { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+.poke-type-row h2 { margin: 0 0 20px; display: flex; align-items: center; }
+.poke-type-row .poke-card-type { --type-icon-size: 56px; }
+.poke-type-row h2 .poke-card-type { --type-icon-size: 72px; }
+.poke-matchup-section + .poke-matchup-section { margin-top: 22px; padding-top: 20px; border-top: 1px solid #475569; }
+.poke-matchup-title { margin: 0 0 14px; font-size: 24px; color: #cbd5e1; }
+.poke-defense .poke-matchup-title { color: #fda4af; }
+.poke-multiplier-groups { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.poke-multiplier-group { min-width: 0; padding: 16px; border-radius: 14px; background: #22304a; }
+.poke-multiplier-group h3 { margin: 0 0 14px; font-size: 32px; color: #fde68a; }
+.poke-multiplier-group[data-multiplier="2"] h3, .poke-multiplier-group[data-multiplier="4"] h3 { color: #fda4af; }
+.poke-multiplier-group[data-multiplier="0.5"] h3, .poke-multiplier-group[data-multiplier="0.25"] h3 { color: #67e8f9; }
+.poke-multiplier-group > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.poke-empty { color: #94a3b8; font-size: 32px; }
+@media (max-width: 600px) { .poke-multiplier-groups { grid-template-columns: 1fr; } }
 #pokemonContent [data-poke-scroll]:focus { outline: 4px solid var(--focus); outline-offset: -4px; }
 @media (max-width: 850px) {
   .poke-library { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -464,4 +472,29 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
   .stroke-stage { grid-template-columns: minmax(300px,.75fr) minmax(420px,1.25fr); }
   .tian-grid { width: min(43vh,360px); }
   .stroke-choice { aspect-ratio: 1.8; }
+}
+
+.poke-type-view { height: 100%; display: flex; flex-direction: column; gap: clamp(8px,1.5vh,18px); }
+#pokemonContent:has(.poke-type-view) { padding: clamp(10px,1.8vh,20px); overflow: hidden; container-type: size; }
+.poke-type-picker { display: grid; grid-template-columns: repeat(18,minmax(0,1fr)); gap: 4px; flex-shrink: 0; }
+.poke-type-picker .btn { display: flex; justify-content: center; padding: 8px 0; border-radius: 10px; min-width: 0; }
+.poke-type-picker .poke-card-type { --type-icon-size: min(3.5vw,5.5vh,48px); }
+.poke-type-picker [aria-pressed="true"] { background: #164e63; }
+.poke-single-type { flex: 1; min-height: 0; padding: clamp(8px,1.5vh,18px); display: flex; flex-direction: column; }
+.poke-single-type h2 { justify-content: center; margin: 0 0 clamp(6px,1vh,14px); }
+.poke-single-type h2 .poke-card-type { --type-icon-size: min(8vh,72px); }
+.poke-type-position { font-size: 20px; color: var(--text-soft); margin-left: 20px; }
+.poke-single-matchups { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; flex: 1; min-height: 0; }
+.poke-single-matchups .poke-matchup-section { display: flex; flex-direction: column; min-width: 0; }
+.poke-single-matchups .poke-matchup-section + .poke-matchup-section { margin: 0; padding: 0 0 0 16px; border-top: 0; border-left: 1px solid #475569; }
+.poke-single-matchups .poke-matchup-title { font-size: clamp(16px,2.8vh,26px); margin-bottom: 8px; }
+.poke-single-matchups .poke-multiplier-groups { grid-template-columns: 1fr; grid-template-rows: repeat(3,minmax(0,1fr)); gap: 8px; flex: 1; min-height: 0; }
+.poke-single-matchups .poke-multiplier-group { display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
+.poke-single-matchups .poke-multiplier-group h3 { flex: 0 0 68px; font-size: clamp(20px,3.4vh,32px); margin: 0; }
+.poke-single-matchups .poke-multiplier-group > div { gap: 6px; }
+.poke-single-matchups .poke-card-type { --type-icon-size: min(4.2vw,6.5vh,56px); }
+@container (max-width: 1000px) {
+  .poke-single-matchups .poke-card-type { --type-icon-size: min(3.4cqw,6cqh,40px); }
+  .poke-single-matchups .poke-multiplier-group { gap: 6px; padding: 6px; }
+  .poke-single-matchups .poke-multiplier-group h3 { flex-basis: 54px; }
 }
