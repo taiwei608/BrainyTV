@@ -584,6 +584,14 @@ function nextQuestion() {
 
   document.getElementById('questionMeta').textContent = `${GAME_DEFINITIONS[game.gameType].label}・${LEVEL_DEFINITIONS[game.level].label}・第 ${game.questionNumber} 題`;
   document.getElementById('questionText').textContent = game.current.prompt || `${game.current.a} ${game.current.operator} ${game.current.b} = ?`;
+  if (game.current.pokemonType) {
+    const question = document.getElementById('questionText');
+    const typeLabel = id => {
+      const type = window.POKEMON_DATA.types.find(t => t.id === id);
+      return `<span class="quiz-type-label">${Pokemon.typeIcon(id)}<span>${escapeHtml(type.name)}屬性</span></span>`;
+    };
+    question.innerHTML = `<span class="quiz-type-matchup">${typeLabel(game.current.attackType)}<span class="quiz-attack-arrow"><span>攻擊</span><span aria-hidden="true">→</span></span>${typeLabel(game.current.defenseType)}</span><span class="quiz-type-prompt">傷害是幾倍？</span>`;
+  }
   screens.game.classList.toggle('pokemon-quiz', game.gameType === 'pokemonTypes');
   screens.game.classList.toggle('pokemon-name-quiz', game.gameType === 'pokemonNames');
   document.getElementById('feedback').textContent = '';
@@ -673,6 +681,7 @@ function generatePokemonQuestion(record) {
       const key = `${attack.id}>${defense.id}`;
       const weight = questionWeight(record.questionStats[key] || { correct: 0, wrong: 0 });
       candidates.push({ key, weight, answer: Pokemon.multiplier(attack.id, defense.id),
+        attackType: attack.id, defenseType: defense.id,
         prompt: `${attack.name}屬性攻擊 → ${defense.name}屬性\n傷害是幾倍？`, pokemonType: true });
     }
   }

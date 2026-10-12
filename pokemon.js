@@ -191,5 +191,5 @@ const Pokemon = (() => {
     if(action==='filter')requestAnimationFrame(()=>{const target=$('pokemonContent').querySelector(`[data-poke="${action}"][data-value="${value}"]`);if(target){focusWithoutScroll(target);target.scrollIntoView({block:'nearest'});}});
   });
 
-  return {open,back,multiplier,condition,loadData};
+  return {open,back,multiplier,condition,loadData,typeIcon};
 })();
