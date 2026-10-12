@@ -3,6 +3,7 @@ const STORAGE_KEY = 'family-learning-tv-v1';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
 const GAME_DEFINITIONS = {
+  pokemonTypes: { label: '屬性相剋測驗', symbol: '◉', levels: ['types'] },
   multiplication: { label: '九九乘法', symbol: '×', levels: ['all'] },
   addition: { label: '加法挑戰', symbol: '+', levels: ['ones', 'tens', 'hundreds'] },
   subtraction: { label: '減法挑戰', symbol: '−', levels: ['ones', 'tens', 'hundreds'] },
@@ -10,6 +11,7 @@ const GAME_DEFINITIONS = {
 };
 
 const LEVEL_DEFINITIONS = {
+  types: { label: '單一屬性' },
   all: { label: '九九乘法', min: 2, max: 9 },
   ones: { label: '個位數', min: 1, max: 9 },
   tens: { label: '十位數', min: 10, max: 99 },
@@ -258,6 +260,7 @@ function playerRecord(player, gameType = state.settings.gameType, level = select
 }
 
 function selectedLevel(gameType = state.settings.gameType) {
+  if (gameType === 'pokemonTypes') return 'types';
   return gameType === 'multiplication' ? 'all' : state.settings.level;
 }
 
@@ -376,6 +379,10 @@ function renderGameLeaderboards() {
 
 function selectGame(gameType) {
   if (!GAME_DEFINITIONS[gameType]) return;
+  if (gameType === 'pokemonTypes' && !window.POKEMON_DATA) {
+    Pokemon.loadData().then(() => selectGame(gameType)).catch(() => Pokemon.open());
+    return;
+  }
   state.settings.gameType = gameType;
   if (gameType !== 'multiplication' && !['ones', 'tens', 'hundreds'].includes(state.settings.level)) {
     state.settings.level = 'ones';
@@ -390,7 +397,8 @@ function renderSettings() {
   const definition = GAME_DEFINITIONS[gameType];
   const player = currentPlayer();
   document.getElementById('settingsTitle').textContent = `${definition.label}設定`;
-  document.getElementById('levelSetting').classList.toggle('hidden', gameType === 'multiplication');
+  document.getElementById('levelSetting').classList.toggle('hidden', gameType === 'multiplication' || gameType === 'pokemonTypes');
+  document.getElementById('pokemonQuizRules').classList.toggle('hidden', gameType !== 'pokemonTypes');
   document.getElementById('multiplicationTableSetting').classList.toggle('hidden', gameType !== 'multiplication');
 
   document.querySelectorAll('[data-level]').forEach(btn => {
@@ -570,7 +578,8 @@ function nextQuestion() {
   game.current = generateQuestion(playerRecord(currentPlayer(), game.gameType, game.level), game.gameType, game.level);
 
   document.getElementById('questionMeta').textContent = `${GAME_DEFINITIONS[game.gameType].label}・${LEVEL_DEFINITIONS[game.level].label}・第 ${game.questionNumber} 題`;
-  document.getElementById('questionText').textContent = `${game.current.a} ${game.current.operator} ${game.current.b} = ?`;
+  document.getElementById('questionText').textContent = game.current.prompt || `${game.current.a} ${game.current.operator} ${game.current.b} = ?`;
+  screens.game.classList.toggle('pokemon-quiz', game.gameType === 'pokemonTypes');
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('remoteHint').textContent = '方向鍵選擇答案・OK 確認';
@@ -581,6 +590,7 @@ function nextQuestion() {
 }
 
 function generateQuestion(record, gameType, level) {
+  if (gameType === 'pokemonTypes') return generatePokemonQuestion(record);
   if (gameType !== 'multiplication') return generateArithmeticQuestion(record, gameType, level);
 
   const candidates = [];
@@ -600,6 +610,20 @@ function generateQuestion(record, gameType, level) {
   }
   const q = candidates[candidates.length - 1];
   return { ...q, operator: '×', answer: q.a * q.b };
+}
+
+function generatePokemonQuestion(record) {
+  const candidates = [];
+  for (const attack of window.POKEMON_DATA.types) {
+    for (const defense of window.POKEMON_DATA.types) {
+      const key = `${attack.id}>${defense.id}`;
+      const weight = questionWeight(record.questionStats[key] || { correct: 0, wrong: 0 });
+      candidates.push({ key, weight, answer: Pokemon.multiplier(attack.id, defense.id),
+        prompt: `${attack.name}屬性攻擊 → ${defense.name}屬性\n傷害是幾倍？`, pokemonType: true });
+    }
+  }
+  let pick = Math.random() * candidates.reduce((sum, q) => sum + q.weight, 0);
+  return candidates.find(q => (pick -= q.weight) <= 0) || candidates[candidates.length - 1];
 }
 
 function generateArithmeticQuestion(record, gameType, level) {
@@ -675,7 +699,7 @@ function renderChoices() {
   makeChoiceOptions(game.current).forEach(value => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
-    btn.textContent = value;
+    btn.textContent = game.current.pokemonType ? pokemonAnswerLabel(value) : value;
     btn.dataset.answerValue = String(value);
     btn.addEventListener('click', () => submitAnswer(value, btn));
     area.appendChild(btn);
@@ -684,6 +708,7 @@ function renderChoices() {
 }
 
 function makeChoiceOptions(question) {
+  if (question.pokemonType) return shuffle([0, 0.5, 1, 2]);
   const answer = question.answer;
   const values = new Set([answer]);
   const place = answer >= 1000 ? 100 : answer >= 100 ? 10 : answer >= 20 ? 5 : 1;
@@ -695,6 +720,10 @@ function makeChoiceOptions(question) {
     if (candidate >= 0) values.add(candidate);
   }
   return shuffle([...values]);
+}
+
+function pokemonAnswerLabel(value) {
+  return ({0: '×0 無效', 0.5: '×0.5 效果不好', 1: '×1 一般', 2: '×2 效果絕佳'})[value];
 }
 
 function submitAnswer(value, sourceButton) {
@@ -722,7 +751,8 @@ function submitAnswer(value, sourceButton) {
   updateHud();
 
   const feedback = document.getElementById('feedback');
-  feedback.textContent = correct ? `答對了！答案是 ${game.current.answer}` : `答錯了！正確答案是 ${game.current.answer}，扣 5 秒`;
+  const answerLabel = game.current.pokemonType ? pokemonAnswerLabel(game.current.answer) : game.current.answer;
+  feedback.textContent = correct ? `答對了！答案是 ${answerLabel}` : `答錯了！正確答案是 ${answerLabel}，扣 5 秒`;
   feedback.className = `feedback ${correct ? 'good' : 'bad'}`;
 
   if (!correct) {
@@ -783,7 +813,7 @@ function finishGame() {
   document.getElementById('correctCount').textContent = game.correct;
   document.getElementById('wrongCount').textContent = game.wrong;
   document.getElementById('accuracyText').textContent = `${accuracy}%`;
-  document.getElementById('highScoreLabel').textContent = game.gameType === 'multiplication' ? '本遊戲最高' : '本級最高';
+  document.getElementById('highScoreLabel').textContent = GAME_DEFINITIONS[game.gameType].levels.length === 1 ? '本遊戲最高' : '本級最高';
   document.getElementById('highScoreText').textContent = record.highScore;
   const todayHigh = dailyScore(record, 0);
   const yesterdayHigh = dailyScore(record, 1);

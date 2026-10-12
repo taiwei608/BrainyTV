@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#111827" />
   <title>Brainy Arena</title>
-  <link rel="stylesheet" href="styles.css?v=20261011-large-type-icons" />
+  <link rel="stylesheet" href="styles.css?v=20261012-pokemon-quiz" />
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -73,13 +73,13 @@
           </div>
         </section>
         <section class="activity-category" aria-labelledby="pokemonActivitiesTitle">
-          <h2 id="pokemonActivitiesTitle" class="activity-category-title">寶可夢</h2>
-          <button class="game-card pokemon-card" data-action="open-pokemon"><span class="game-icon" aria-hidden="true">◉</span><span class="game-copy"><strong>寶可夢專區</strong><small>屬性相剋・朱／紫圖鑑</small></span></button>
+          <h2 id="pokemonActivitiesTitle" class="activity-category-title">寶可夢</h2><div class="game-cards focus-grid"><button class="game-card pokemon-card" data-game="pokemonTypes"><span class="game-icon" aria-hidden="true">✦</span><span class="game-copy"><strong>屬性相剋測驗</strong><small>攻擊倍率四選一・最高分挑戰</small></span></button>
+          <button class="game-card pokemon-card" data-action="open-pokemon"><span class="game-icon" aria-hidden="true">◉</span><span class="game-copy"><strong>寶可夢專區</strong><small>屬性相剋・朱／紫圖鑑</small></span></button></div>
         </section>
         </div>
         <section class="leaderboard-overview" aria-labelledby="leaderboardTitle">
           <div class="leaderboard-overview-heading">
-            <h2 id="leaderboardTitle">🏆 數學排行榜</h2>
+            <h2 id="leaderboardTitle">🏆 挑戰排行榜</h2>
             <span>最高分玩家・同分並列</span>
           </div>
           <div id="gameLeaderboards" class="leaderboard-grid"></div>
@@ -121,7 +121,7 @@
         <div class="settings-layout">
           <div class="settings-controls">
             <div class="fixed-duration"><span>每局時間</span><strong>60 秒</strong></div>
-            <div id="levelSetting" class="setting-block">
+            <p id="pokemonQuizRules" class="hidden">18 種單一屬性，選出攻擊的傷害倍率。答對得 10 分，答錯扣 5 秒；曾答錯的題目會加強練習。依一般屬性表計算，不包含特性、道具或太晶化。</p><div id="levelSetting" class="setting-block">
               <span class="setting-label">數字範圍</span>
               <div class="segmented focus-grid" id="levelOptions">
                 <button class="option selected" data-level="ones">個位數</button>
@@ -282,7 +282,7 @@
   <script src="listening.js?v=20260914-play-counts"></script>
   <script src="stroke-data.js?v=20260921" onerror="this.remove()"></script>
   <script src="stroke-game.js?v=20260922-auto-advance"></script>
-  <script src="pokemon.js?v=20261011-lazy-data"></script>
-  <script src="app.js?v=20261011-remote-navigation"></script>
+  <script src="pokemon.js?v=20261012-pokemon-quiz"></script>
+  <script src="app.js?v=20261012-pokemon-quiz"></script>
 </body>
 </html>
