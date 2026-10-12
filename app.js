@@ -12,7 +12,7 @@ const GAME_DEFINITIONS = {
 };
 
 const LEVEL_DEFINITIONS = {
-  names: { label: '關都精選 99 隻' },
+  names: { label: '帕底亞圖鑑 400 隻' },
   types: { label: '單一屬性' },
   all: { label: '九九乘法', min: 2, max: 9 },
   ones: { label: '個位數', min: 1, max: 9 },
@@ -681,7 +681,7 @@ function generatePokemonQuestion(record) {
 }
 
 function generatePokemonNameQuestion(record) {
-  const pool = window.POKEMON_DATA.species.filter(s => s.id <= 151);
+  const pool = window.POKEMON_DATA.species.filter(s => s.dex.some(d => d[0] === 31));
   const candidates = pool.map(s => ({ species: s, weight: questionWeight(record.questionStats[`name:${s.id}`] || { correct: 0, wrong: 0 }) }));
   let pick = Math.random() * candidates.reduce((sum, q) => sum + q.weight, 0);
   const chosen = (candidates.find(q => (pick -= q.weight) <= 0) || candidates[candidates.length - 1]).species;

@@ -36,21 +36,23 @@ assert.ok(context.questionWeight({correct:0,wrong:3}) > context.questionWeight({
 console.log('PASS: all 324 matchup questions, four choices, wrong-answer weighting, independent player records and persisted highest score.');
 
 const nameSeen = new Set();
-for (let i = 0; i < 99; i++) {
-  context.Math.random = () => (i + 0.5) / 99;
+const paldeaIds = new Set(context.window.POKEMON_DATA.species.filter(s => s.dex.some(d => d[0] === 31)).map(s => s.id));
+assert.equal(paldeaIds.size, 400);
+for (let i = 0; i < 400; i++) {
+  context.Math.random = () => (i + 0.5) / 400;
   const q = context.generateQuestion(record, 'pokemonNames', 'names');
   nameSeen.add(q.answer);
   assert.equal(q.choices.length, 4);
   assert.equal(new Set(q.choices).size, 4);
   assert.ok(q.choices.includes(q.answer));
   assert.equal(q.answerName, context.window.POKEMON_DATA.species.find(s => s.id === q.answer).name);
-  assert.ok(q.choices.every(id => id >= 1 && id <= 151));
+  assert.ok(q.choices.every(id => paldeaIds.has(id)));
 }
-assert.equal(nameSeen.size, 99);
+assert.equal(nameSeen.size, 400);
 assert.equal(context.selectedLevel('pokemonNames'), 'names');
 assert.equal(context.playerRecord(restored, 'pokemonNames', 'names').highScore, 0);
 assert.equal(context.playerRecord(restored, 'pokemonTypes', 'types').highScore, 80);
-console.log('PASS: all 99 name questions, distinct choices, matching names and separate records.');
+console.log('PASS: all 400 Paldea name questions, distinct choices, matching names and separate records.');
 
 const imageElements = new Map();
 const answers = [{disabled:false}, {disabled:false}];
