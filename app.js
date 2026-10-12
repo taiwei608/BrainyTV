@@ -3,6 +3,7 @@ const STORAGE_KEY = 'family-learning-tv-v1';
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
 const GAME_DEFINITIONS = {
+  pokemonNames: { label: '看圖猜寶可夢', symbol: '◉', levels: ['names'] },
   pokemonTypes: { label: '屬性相剋測驗', symbol: '◉', levels: ['types'] },
   multiplication: { label: '九九乘法', symbol: '×', levels: ['all'] },
   addition: { label: '加法挑戰', symbol: '+', levels: ['ones', 'tens', 'hundreds'] },
@@ -11,6 +12,7 @@ const GAME_DEFINITIONS = {
 };
 
 const LEVEL_DEFINITIONS = {
+  names: { label: '關都精選 99 隻' },
   types: { label: '單一屬性' },
   all: { label: '九九乘法', min: 2, max: 9 },
   ones: { label: '個位數', min: 1, max: 9 },
@@ -216,6 +218,7 @@ function updateDailyHighScore(record, score) {
 
 function createProgressMap() {
   return {
+    pokemonNames: { names: emptyRecord() },
     multiplication: { all: emptyRecord() },
     addition: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() },
     subtraction: { ones: emptyRecord(), tens: emptyRecord(), hundreds: emptyRecord() },
@@ -260,6 +263,7 @@ function playerRecord(player, gameType = state.settings.gameType, level = select
 }
 
 function selectedLevel(gameType = state.settings.gameType) {
+  if (gameType === 'pokemonNames') return 'names';
   if (gameType === 'pokemonTypes') return 'types';
   return gameType === 'multiplication' ? 'all' : state.settings.level;
 }
@@ -379,7 +383,7 @@ function renderGameLeaderboards() {
 
 function selectGame(gameType) {
   if (!GAME_DEFINITIONS[gameType]) return;
-  if (gameType === 'pokemonTypes' && !window.POKEMON_DATA) {
+  if (gameType.startsWith('pokemon') && !window.POKEMON_DATA) {
     Pokemon.loadData().then(() => selectGame(gameType)).catch(() => Pokemon.open());
     return;
   }
@@ -397,8 +401,9 @@ function renderSettings() {
   const definition = GAME_DEFINITIONS[gameType];
   const player = currentPlayer();
   document.getElementById('settingsTitle').textContent = `${definition.label}設定`;
-  document.getElementById('levelSetting').classList.toggle('hidden', gameType === 'multiplication' || gameType === 'pokemonTypes');
+  document.getElementById('levelSetting').classList.toggle('hidden', GAME_DEFINITIONS[gameType].levels.length === 1);
   document.getElementById('pokemonQuizRules').classList.toggle('hidden', gameType !== 'pokemonTypes');
+  document.getElementById('pokemonNameRules').classList.toggle('hidden', gameType !== 'pokemonNames');
   document.getElementById('multiplicationTableSetting').classList.toggle('hidden', gameType !== 'multiplication');
 
   document.querySelectorAll('[data-level]').forEach(btn => {
@@ -562,7 +567,7 @@ function startGame() {
 
   clearInterval(timerId);
   timerId = setInterval(() => {
-    if (!game || game.answered || game.paused) return;
+    if (!game || game.answered || game.paused || game.imageLoading) return;
     game.timeLeft = Math.max(0, game.timeLeft - 1);
     updateHud();
     if (game.timeLeft <= 0) finishGame();
@@ -580,6 +585,7 @@ function nextQuestion() {
   document.getElementById('questionMeta').textContent = `${GAME_DEFINITIONS[game.gameType].label}・${LEVEL_DEFINITIONS[game.level].label}・第 ${game.questionNumber} 題`;
   document.getElementById('questionText').textContent = game.current.prompt || `${game.current.a} ${game.current.operator} ${game.current.b} = ?`;
   screens.game.classList.toggle('pokemon-quiz', game.gameType === 'pokemonTypes');
+  screens.game.classList.toggle('pokemon-name-quiz', game.gameType === 'pokemonNames');
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = 'feedback';
   document.getElementById('remoteHint').textContent = '方向鍵選擇答案・OK 確認';
@@ -587,9 +593,57 @@ function nextQuestion() {
   document.querySelector('.countdown').classList.remove('time-penalty');
 
   renderChoices();
+  renderPokemonQuestionImage();
+}
+
+function renderPokemonQuestionImage() {
+  const image = document.getElementById('pokemonQuestionImage');
+  const retry = document.getElementById('pokemonImageRetry');
+  image.onload = image.onerror = null;
+  image.classList.add('hidden');
+  retry.classList.add('hidden');
+  image.removeAttribute('src');
+  game.imageLoading = false;
+  if (!game.current.pokemonName) return;
+  const current = game.current;
+  const activeGame = game;
+  const feedback = document.getElementById('feedback');
+  function load() {
+    if (game !== activeGame || game.current !== current) return;
+    game.imageLoading = true;
+    retry.classList.add('hidden');
+    image.classList.add('hidden');
+    feedback.textContent = '圖片載入中，倒數暫停…';
+    document.querySelectorAll('.answer-btn').forEach(btn => { btn.disabled = true; });
+    let settled = false;
+    const timeout = setTimeout(() => finish(false), 15000);
+    function finish(success) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (game !== activeGame || game.current !== current) return;
+      feedback.textContent = success ? '' : '圖片載入失敗，請重試；倒數暫停。';
+      if (success) {
+        game.imageLoading = false;
+        game.answerUnlockAt = Date.now() + 300;
+        image.classList.remove('hidden');
+        document.querySelectorAll('.answer-btn').forEach(btn => { btn.disabled = false; });
+        requestAnimationFrame(() => focusFirst(document.getElementById('choiceArea')));
+      } else {
+        retry.classList.remove('hidden');
+        focusWithoutScroll(retry);
+      }
+    }
+    image.onload = () => finish(true);
+    image.onerror = () => finish(false);
+    image.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${current.answer}.png?retry=${Date.now()}`;
+  }
+  retry.onclick = load;
+  load();
 }
 
 function generateQuestion(record, gameType, level) {
+  if (gameType === 'pokemonNames') return generatePokemonNameQuestion(record);
   if (gameType === 'pokemonTypes') return generatePokemonQuestion(record);
   if (gameType !== 'multiplication') return generateArithmeticQuestion(record, gameType, level);
 
@@ -624,6 +678,17 @@ function generatePokemonQuestion(record) {
   }
   let pick = Math.random() * candidates.reduce((sum, q) => sum + q.weight, 0);
   return candidates.find(q => (pick -= q.weight) <= 0) || candidates[candidates.length - 1];
+}
+
+function generatePokemonNameQuestion(record) {
+  const pool = window.POKEMON_DATA.species.filter(s => s.id <= 151);
+  const candidates = pool.map(s => ({ species: s, weight: questionWeight(record.questionStats[`name:${s.id}`] || { correct: 0, wrong: 0 }) }));
+  let pick = Math.random() * candidates.reduce((sum, q) => sum + q.weight, 0);
+  const chosen = (candidates.find(q => (pick -= q.weight) <= 0) || candidates[candidates.length - 1]).species;
+  const others = shuffle(pool.filter(s => s.id !== chosen.id)).slice(0, 3);
+  return { key: `name:${chosen.id}`, answer: chosen.id, answerName: chosen.name,
+    prompt: '這是哪一隻寶可夢？', pokemonName: true,
+    choices: shuffle([chosen, ...others]).map(s => s.id) };
 }
 
 function generateArithmeticQuestion(record, gameType, level) {
@@ -699,7 +764,7 @@ function renderChoices() {
   makeChoiceOptions(game.current).forEach(value => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
-    btn.textContent = game.current.pokemonType ? pokemonAnswerLabel(value) : value;
+    btn.textContent = game.current.pokemonName ? window.POKEMON_DATA.species.find(s => s.id === value).name : game.current.pokemonType ? pokemonAnswerLabel(value) : value;
     btn.dataset.answerValue = String(value);
     btn.addEventListener('click', () => submitAnswer(value, btn));
     area.appendChild(btn);
@@ -708,6 +773,7 @@ function renderChoices() {
 }
 
 function makeChoiceOptions(question) {
+  if (question.pokemonName) return question.choices;
   if (question.pokemonType) return shuffle([0, 0.5, 1, 2]);
   const answer = question.answer;
   const values = new Set([answer]);
@@ -727,7 +793,7 @@ function pokemonAnswerLabel(value) {
 }
 
 function submitAnswer(value, sourceButton) {
-  if (!game || game.answered) return;
+  if (!game || game.answered || game.imageLoading) return;
   if (Date.now() < game.answerUnlockAt) return;
   game.answered = true;
   const correct = value === game.current.answer;
@@ -751,7 +817,7 @@ function submitAnswer(value, sourceButton) {
   updateHud();
 
   const feedback = document.getElementById('feedback');
-  const answerLabel = game.current.pokemonType ? pokemonAnswerLabel(game.current.answer) : game.current.answer;
+  const answerLabel = game.current.answerName || (game.current.pokemonType ? pokemonAnswerLabel(game.current.answer) : game.current.answer);
   feedback.textContent = correct ? `答對了！答案是 ${answerLabel}` : `答錯了！正確答案是 ${answerLabel}，扣 5 秒`;
   feedback.className = `feedback ${correct ? 'good' : 'bad'}`;
 

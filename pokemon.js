@@ -48,7 +48,7 @@ const Pokemon = (() => {
       else requestAnimationFrame(()=>focusFirst(root));
     }
   }
-  function home() { return `<div class="poke-home">${button('✦ 屬性與相剋<br><small>18 種屬性・圖示・攻擊倍率表</small>','types')}<button class="btn secondary" data-game="pokemonTypes">✦ 屬性相剋測驗<br><small>60 秒四選一・計分與最高分紀錄</small></button>${button('◉ 朱／紫圖鑑<br><small>編號・進化・學招・招式威力</small>','dex')}</div><p class="poke-note">包含帕底亞、北上與藍莓圖鑑，另列有朱／紫學招資料的其他寶可夢。文字與屬性圖示可離線查看，寶可夢圖片需要網路。</p><p class="poke-note">資料：PokéAPI・${esc(data.updated)} 快照。招式倍率以一般對戰屬性計算，不包含特性、道具、太晶化或特殊招式效果。</p>`; }
+  function home() { return `<div class="poke-home"><button class="btn secondary" data-game="pokemonNames">？ 看圖猜寶可夢<br><small>猜名稱四選一・最高分紀錄</small></button>${button('✦ 屬性與相剋<br><small>18 種屬性・圖示・攻擊倍率表</small>','types')}<button class="btn secondary" data-game="pokemonTypes">✦ 屬性相剋測驗<br><small>60 秒四選一・計分與最高分紀錄</small></button>${button('◉ 朱／紫圖鑑<br><small>編號・進化・學招・招式威力</small>','dex')}</div><p class="poke-note">包含帕底亞、北上與藍莓圖鑑，另列有朱／紫學招資料的其他寶可夢。文字與屬性圖示可離線查看，寶可夢圖片需要網路。</p><p class="poke-note">資料：PokéAPI・${esc(data.updated)} 快照。招式倍率以一般對戰屬性計算，不包含特性、道具、太晶化或特殊招式效果。</p>`; }
   function matchupGroups(valueFor, values = [2, 0.5, 0]) {
     return `<div class="poke-multiplier-groups">${values.map(value=>{const targets=data.types.filter(t=>valueFor(t.id)===value);return `<div class="poke-multiplier-group" data-multiplier="${value}"><h3>×${value}</h3><div>${targets.length?targets.map(t=>typeIcon(t.id)).join(''):'<span class="poke-empty" aria-label="無符合屬性">—</span>'}</div></div>`;}).join('')}</div>`;
   }

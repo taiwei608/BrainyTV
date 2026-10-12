@@ -541,3 +541,10 @@ button { transition: transform .12s ease, outline-color .12s ease, box-shadow .1
 
 .leaderboard-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .poke-home { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.pokemon-name-quiz .question-text { font-size: clamp(28px, 4vh, 46px); line-height: 1.2; }
+.pokemon-question-image { display: block; margin: 0 auto; width: min(24vh, 240px); height: min(24vh, 240px); object-fit: contain; image-rendering: pixelated; }
+.pokemon-name-quiz .answer-btn { font-size: clamp(24px, 4vh, 42px); }
+#pokemonNameRules { font-size: clamp(20px, 2.5vh, 28px); line-height: 1.6; }
+.leaderboard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.poke-home { grid-template-columns: repeat(2, minmax(0, 1fr)); }
